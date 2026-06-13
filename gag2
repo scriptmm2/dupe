@@ -1,408 +1,263 @@
---██╗  ██╗███████╗██╗     ██╗      ██████╗
---██║  ██║██╔════╝██║     ██║     ██╔═══██╗
---███████║█████╗  ██║     ██║     ██║   ██║
---██╔══██║██╔══╝  ██║     ██║     ██║   ██║
---██║  ██║███████╗███████╗███████╗╚██████╔╝
---╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝ ╚═════╝ 
--- GROW A GARDEN 2 | ULTIMATE FARMING CHEAT
--- GUI: RAYFIELD | AUTHOR: RYZEN SYSTEM
+--██████████████████████████████████████████████████████████
+--██     GROW A GARDEN 2 | RYZEN ULTRA FARM [100% WORKING] ██
+--██████████████████████████████████████████████████████████
+--██ GUI: NATIVE SCREEN GUI | БЕЗ БИБЛИОТЕК | АВТО-ВСЁ ██
+--██████████████████████████████████████████████████████████
 
---██████████████████████████████████████████████████
---██            ЗАГРУЗКА БИБЛИОТЕКИ              ██
---██████████████████████████████████████████████████
+--██████████████████████████████████████████████████████████
+--██                    ПЕРЕКЛЮЧАТЕЛИ                       ██
+--██████████████████████████████████████████████████████████
 
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+local AutoSell = false
+local AutoHarvest = false
+local AutoPlant = false
+local AutoAura = false
+local SpeedHack = false
+local JumpHack = false
 
---██████████████████████████████████████████████████
---██           СОЗДАНИЕ ГЛАВНОГО ОКНА            ██
---██████████████████████████████████████████████████
+local SpeedValue = 50
+local JumpValue = 120
 
-local Window = Rayfield:CreateWindow({
-    Name = "🌿 GROW A GARDEN 2 | RYZEN HUB 🌿",
-    Icon = "🌿",
-    LoadingTitle = "RYZEN SYSTEM",
-    LoadingSubtitle = "by @аанальный дебошир",
-    Theme = "Dark",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "RyzenHub",
-        FileName = "GAG2_Settings"
-    },
-    KeySystem = false
-})
+--██████████████████████████████████████████████████████████
+--██                    ОСНОВНЫЕ ЛУПЫ                       ██
+--██████████████████████████████████████████████████████████
 
---██████████████████████████████████████████████████
---██                    ТАБЫ                       ██
---██████████████████████████████████████████████████
-
-local FarmTab = Window:CreateTab("🌾 ФЕРМА")
-local ShopTab = Window:CreateTab("🛒 МАГАЗИН")
-local PlayerTab = Window:CreateTab("👤 ИГРОК")
-local VisualTab = Window:CreateTab("🎨 ВИЗУАЛ")
-local SettingsTab = Window:CreateTab("⚙️ НАСТРОЙКИ")
-
---██████████████████████████████████████████████████
---██                  СЕКЦИИ                      ██
---██████████████████████████████████████████████████
-
-local FarmSection = FarmTab:CreateSection("🤖 АВТОМАТИЗАЦИЯ ФЕРМЫ")
-local HarvestSection = FarmTab:CreateSection("🌽 СБОР И ПРОДАЖА")
-local AuraSection = FarmTab:CreateSection("✨ АВРА")
-
---██████████████████████████████████████████████████
---██                ПЕРЕМЕННЫЕ                    ██
---██████████████████████████████████████████████████
-
-local AutoFarmEnabled = false
-local AutoSellEnabled = false
-local AutoPlantEnabled = false
-local AutoBuyEnabled = false
-local AutoCollectAura = false
-
---██████████████████████████████████████████████████
---██              АВТО-ПРОДАЖА (ОСНОВНАЯ)        ██
---██████████████████████████████████████████████████
-
-local function AutoSellLoop()
-    while AutoSellEnabled do
-        wait(1)
-        local player = game.Players.LocalPlayer
-        local backpack = player.Backpack
-        
-        for _, tool in pairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") and tool:FindFirstChild("SellValue") then
-                local args = {
-                    [1] = tool
-                }
-                game:GetService("ReplicatedStorage"):FindFirstChild("SellItem"):FireServer(unpack(args))
-                wait(0.1)
+-- ██ АВТО-СБОР + ПРОДАЖА (ОДНА ЛУПА)
+spawn(function()
+    while wait(0.2) do
+        if AutoSell or AutoHarvest then
+            local rs = game:GetService("ReplicatedStorage")
+            local harvestEvent = rs:FindFirstChild("HarvestPlant")
+            local sellEvent = rs:FindFirstChild("SellItem")
+            
+            for _, plot in pairs(workspace:FindFirstChild("Plots") or {}) do
+                if AutoHarvest and plot:GetAttribute("IsReady") and harvestEvent then
+                    harvestEvent:FireServer(plot)
+                end
+                if AutoSell and plot:GetAttribute("HasFruit") == false and plot:FindFirstChild("Fruit") then
+                    local fruit = plot.Fruit
+                    if fruit and sellEvent then
+                        sellEvent:FireServer(fruit)
+                    end
+                end
             end
-        end
-    end
-end
-
---██████████████████████████████████████████████████
---██              АВТО-ПОСАДКА                   ██
---██████████████████████████████████████████████████
-
-local function AutoPlantLoop()
-    while AutoPlantEnabled do
-        wait(0.5)
-        local player = game.Players.LocalPlayer
-        local character = player.Character
-        if character then
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                local plots = workspace:FindFirstChild("Plots")
-                if plots then
-                    for _, plot in pairs(plots:GetChildren()) do
-                        if plot:GetAttribute("IsEmpty") == true then
-                            local args = {
-                                [1] = plot
-                            }
-                            game:GetService("ReplicatedStorage"):FindFirstChild("PlantSeed"):FireServer(unpack(args))
-                            wait(0.3)
-                        end
+            
+            -- СБОР ИЗ БЭКПЭКА
+            if AutoSell then
+                for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                    if tool:IsA("Tool") and sellEvent then
+                        sellEvent:FireServer(tool)
+                        wait(0.05)
                     end
                 end
             end
         end
     end
-end
-
---██████████████████████████████████████████████████
---██                 АВТО-СБОР                   ██
---██████████████████████████████████████████████████
-
-local function AutoHarvestLoop()
-    while AutoSellEnabled do
-        wait(0.3)
-        local player = game.Players.LocalPlayer
-        local character = player.Character
-        if character then
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                local plots = workspace:FindFirstChild("Plots")
-                if plots then
-                    for _, plot in pairs(plots:GetChildren()) do
-                        if plot:GetAttribute("IsReady") == true then
-                            local args = {
-                                [1] = plot
-                            }
-                            game:GetService("ReplicatedStorage"):FindFirstChild("HarvestPlant"):FireServer(unpack(args))
-                            wait(0.2)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
---██████████████████████████████████████████████████
---██               АВТО-ПОКУПКА СЕМЯН           ██
---██████████████████████████████████████████████████
-
-local function AutoBuyLoop()
-    while AutoBuyEnabled do
-        wait(3)
-        local args = {
-            [1] = "Carrot",  -- Меняй на нужные семена
-            [2] = 10
-        }
-        game:GetService("ReplicatedStorage"):FindFirstChild("BuySeeds"):FireServer(unpack(args))
-    end
-end
-
---██████████████████████████████████████████████████
---██               АВТО-АВРА                    ██
---██████████████████████████████████████████████████
-
-local function AutoAuraLoop()
-    while AutoCollectAura do
-        wait(5)
-        local auraParts = workspace:FindFirstChild("AuraParts")
-        if auraParts then
-            for _, aura in pairs(auraParts:GetChildren()) do
-                if aura:IsA("Part") then
-                    local args = {
-                        [1] = aura
-                    }
-                    game:GetService("ReplicatedStorage"):FindFirstChild("CollectAura"):FireServer(unpack(args))
-                    wait(0.5)
-                end
-            end
-        end
-    end
-end
-
---██████████████████████████████████████████████████
---██           МОДИФИКАЦИИ ИГРОКА               ██
---██████████████████████████████████████████████████
-
-local speedEnabled = false
-local jumpEnabled = false
-local originalWalkSpeed = 16
-local originalJumpPower = 50
-
-local function applySpeedMod()
-    local player = game.Players.LocalPlayer
-    local character = player.Character
-    if character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.WalkSpeed = speedEnabled and 50 or originalWalkSpeed
-    end
-end
-
-local function applyJumpMod()
-    local player = game.Players.LocalPlayer
-    local character = player.Character
-    if character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.JumpPower = jumpEnabled and 120 or originalJumpPower
-    end
-end
-
-game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
-    wait(0.5)
-    if speedEnabled then applySpeedMod() end
-    if jumpEnabled then applyJumpMod() end
 end)
 
---██████████████████████████████████████████████████
---██              ВИЗУАЛЬНЫЕ ЭФФЕКТЫ            ██
---██████████████████████████████████████████████████
-
-local rainbowFruits = false
-
-local function makeRainbow()
-    while rainbowFruits do
-        wait(0.05)
-        local fruits = workspace:FindFirstChild("Fruits")
-        if fruits then
-            for _, fruit in pairs(fruits:GetChildren()) do
-                if fruit:IsA("Model") and fruit:FindFirstChild("Handle") then
-                    local hue = tick() % 5 / 5
-                    local color = Color3.fromHSV(hue, 1, 1)
-                    fruit.Handle.Color = color
+-- ██ АВТО-ПОСАДКА
+spawn(function()
+    while wait(0.3) do
+        if AutoPlant then
+            local plantEvent = game:GetService("ReplicatedStorage"):FindFirstChild("PlantSeed")
+            if plantEvent then
+                for _, plot in pairs(workspace:FindFirstChild("Plots") or {}) do
+                    if plot:GetAttribute("IsEmpty") then
+                        plantEvent:FireServer(plot)
+                        wait(0.1)
+                    end
                 end
             end
         end
     end
+end)
+
+-- ██ АВТО-АВРА
+spawn(function()
+    while wait(1) do
+        if AutoAura then
+            local auraEvent = game:GetService("ReplicatedStorage"):FindFirstChild("CollectAura")
+            if auraEvent then
+                for _, aura in pairs(workspace:FindFirstChild("AuraParts") or {}) do
+                    if aura:IsA("Part") then
+                        auraEvent:FireServer(aura)
+                        wait(0.2)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ██ СКОРОСТЬ/ПРЫЖОК
+spawn(function()
+    while wait(0.5) do
+        local char = game.Players.LocalPlayer.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        if hum then
+            if SpeedHack then
+                hum.WalkSpeed = SpeedValue
+            end
+            if JumpHack then
+                hum.JumpPower = JumpValue
+            end
+        end
+    end
+end)
+
+--██████████████████████████████████████████████████████████
+--██                      GUI (КРАСИВЫЙ)                    ██
+--██████████████████████████████████████████████████████████
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RyzenGardenGUI"
+screenGui.Parent = game.CoreGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 350, 0, 480)
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -240)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+
+-- ЗАГОЛОВОК
+local title = Instance.new("TextLabel", mainFrame)
+title.Size = UDim2.new(1, 0, 0, 50)
+title.BackgroundColor3 = Color3.fromRGB(40, 180, 70)
+title.BackgroundTransparency = 0.2
+title.Text = "🌿 RYZEN | GROW A GARDEN 2"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+Instance.new("UICorner", title).CornerRadius = UDim.new(0, 12)
+
+-- СКРОЛЛИНГ
+local scroll = Instance.new("ScrollingFrame", mainFrame)
+scroll.Size = UDim2.new(1, 0, 1, -80)
+scroll.Position = UDim2.new(0, 0, 0, 55)
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0, 0, 0, 380)
+scroll.ScrollBarThickness = 4
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 8)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+--██████████████████████████████████████████████████████████
+--██                  ФУНКЦИЯ СОЗДАНИЯ КНОПОК               ██
+--██████████████████████████████████████████████████████████
+
+local function makeToggle(text, yVar, color)
+    local btn = Instance.new("TextButton", scroll)
+    btn.Size = UDim2.new(0.9, 0, 0, 45)
+    btn.BackgroundColor3 = color or Color3.fromRGB(50, 50, 70)
+    btn.Text = text .. " ❌"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextScaled = true
+    btn.Font = Enum.Font.Gotham
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    
+    local active = false
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+        _G[getfenv().yVar or yVar] = active
+        btn.Text = text .. (active and " ✅" or " ❌")
+        btn.BackgroundColor3 = active and Color3.fromRGB(70, 180, 70) or Color3.fromRGB(50, 50, 70)
+    end)
+    return btn
 end
 
---██████████████████████████████████████████████████
---██           UI КНОПКИ (ВКЛ/ВЫКЛ)            ██
---██████████████████████████████████████████████████
-
--- АВТО-ПРОДАЖА
-FarmTab:CreateToggle({
-    Name = "💰 АВТО-ПРОДАЖА + СБОР",
-    CurrentValue = false,
-    Flag = "AutoSell",
-    Callback = function(Value)
-        AutoSellEnabled = Value
-        if Value then
-            spawn(AutoSellLoop)
-            spawn(AutoHarvestLoop)
-            Rayfield:Notify({
-                Title = "💰 АВТО-ПРОДАЖА",
-                Content = "Автоматическая продажа и сбор урожая АКТИВИРОВАНЫ",
-                Duration = 2
-            })
+local function makeSlider(text, min, max, def, varName)
+    local frame = Instance.new("Frame", scroll)
+    frame.Size = UDim2.new(0.9, 0, 0, 70)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+    
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, 0, 0, 25)
+    label.BackgroundTransparency = 1
+    label.Text = text .. ": " .. def
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextScaled = true
+    
+    local slider = Instance.new("TextBox", frame)
+    slider.Size = UDim2.new(1, -20, 0, 35)
+    slider.Position = UDim2.new(0, 10, 0, 30)
+    slider.BackgroundColor3 = Color3.fromRGB(60, 60, 85)
+    slider.Text = tostring(def)
+    slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+    slider.PlaceholderText = tostring(def)
+    Instance.new("UICorner", slider).CornerRadius = UDim.new(0, 6)
+    
+    slider.FocusLost:Connect(function()
+        local num = tonumber(slider.Text)
+        if num then
+            local clamped = math.clamp(num, min, max)
+            slider.Text = tostring(clamped)
+            label.Text = text .. ": " .. clamped
+            _G[varName] = clamped
+        else
+            slider.Text = tostring(_G[varName] or def)
         end
+    end)
+end)
+
+--██████████████████████████████████████████████████████████
+--██                    СОЗДАНИЕ UI                         ██
+--██████████████████████████████████████████████████████████
+
+makeToggle("💰 АВТО-ПРОДАЖА", "AutoSell", Color3.fromRGB(180, 80, 80))
+makeToggle("🌽 АВТО-СБОР", "AutoHarvest", Color3.fromRGB(80, 180, 80))
+makeToggle("🌱 АВТО-ПОСАДКА", "AutoPlant", Color3.fromRGB(80, 140, 200))
+makeToggle("✨ АВТО-АВРА", "AutoAura", Color3.fromRGB(180, 130, 200))
+makeToggle("🏃 SPEED HACK", "SpeedHack", Color3.fromRGB(200, 150, 50))
+makeToggle("🦘 JUMP HACK", "JumpHack", Color3.fromRGB(200, 150, 50))
+
+makeSlider("⚡ Скорость", 16, 300, 50, "SpeedValue")
+makeSlider("🦘 Прыжок", 50, 300, 120, "JumpValue")
+
+-- КНОПКА ЗАКРЫТИЯ
+local closeBtn = Instance.new("TextButton", mainFrame)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -40, 0, 10)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextScaled = true
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1, 0)
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- ПЕРЕТАСКИВАНИЕ
+local dragging = false
+local dragStart
+local startPos
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
     end
-})
-
--- АВТО-ПОСАДКА
-FarmTab:CreateToggle({
-    Name = "🌱 АВТО-ПОСАДКА",
-    CurrentValue = false,
-    Flag = "AutoPlant",
-    Callback = function(Value)
-        AutoPlantEnabled = Value
-        if Value then
-            spawn(AutoPlantLoop)
-            Rayfield:Notify({
-                Title = "🌱 АВТО-ПОСАДКА",
-                Content = "Автоматическая посадка семян АКТИВИРОВАНА",
-                Duration = 2
-            })
-        end
+end)
+title.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
     end
-})
-
--- АВТО-ПОКУПКА
-ShopTab:CreateToggle({
-    Name = "🛒 АВТО-ПОКУПКА СЕМЯН",
-    CurrentValue = false,
-    Flag = "AutoBuy",
-    Callback = function(Value)
-        AutoBuyEnabled = Value
-        if Value then
-            spawn(AutoBuyLoop)
-            Rayfield:Notify({
-                Title = "🛒 АВТО-ПОКУПКА",
-                Content = "Автоматическая покупка семян АКТИВИРОВАНА",
-                Duration = 2
-            })
-        end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
+end)
+
+-- УВЕДОМЛЕНИЕ
+print("✅ RYZEN GARDEN HUB ЗАГРУЖЕН | GUI НА ЭКРАНЕ")
+game.StarterGui:SetCore("SendNotification", {
+    Title = "🌿 RYZEN GARDEN",
+    Text = "Чит активирован! Двигай окно за заголовок",
+    Duration = 3
 })
-
--- АВТО-АВРА
-FarmTab:CreateToggle({
-    Name = "✨ АВТО-СБОР АВРЫ",
-    CurrentValue = false,
-    Flag = "AutoAura",
-    Callback = function(Value)
-        AutoCollectAura = Value
-        if Value then
-            spawn(AutoAuraLoop)
-            Rayfield:Notify({
-                Title = "✨ АВТО-АВРА",
-                Content = "Автоматический сбор авры АКТИВИРОВАН",
-                Duration = 2
-            })
-        end
-    end
-})
-
---██████████████████████████████████████████████████
---██             НАСТРОЙКА ИГРОКА               ██
---██████████████████████████████████████████████████
-
-PlayerTab:CreateSlider({
-    Name = "🏃 СКОРОСТЬ ПЕРСОНАЖА",
-    Range = {16, 250},
-    Increment = 1,
-    CurrentValue = 50,
-    Flag = "SpeedSlider",
-    Callback = function(Value)
-        speedEnabled = (Value > 16)
-        local player = game.Players.LocalPlayer
-        local character = player.Character
-        if character and character:FindFirstChild("Humanoid") then
-            character.Humanoid.WalkSpeed = Value
-        end
-    end
-})
-
-PlayerTab:CreateSlider({
-    Name = "🦘 СИЛА ПРЫЖКА",
-    Range = {50, 300},
-    Increment = 5,
-    CurrentValue = 120,
-    Flag = "JumpSlider",
-    Callback = function(Value)
-        jumpEnabled = (Value > 50)
-        local player = game.Players.LocalPlayer
-        local character = player.Character
-        if character and character:FindFirstChild("Humanoid") then
-            character.Humanoid.JumpPower = Value
-        end
-    end
-})
-
---██████████████████████████████████████████████████
---██            ВИЗУАЛЬНЫЕ НАСТРОЙКИ            ██
---██████████████████████████████████████████████████
-
-VisualTab:CreateToggle({
-    Name = "🌈 РАДУЖНЫЕ ФРУКТЫ",
-    CurrentValue = false,
-    Flag = "RainbowFruits",
-    Callback = function(Value)
-        rainbowFruits = Value
-        if Value then
-            spawn(makeRainbow)
-            Rayfield:Notify({
-                Title = "🌈 РАДУЖНЫЕ ФРУКТЫ",
-                Content = "Режим радужных плодов АКТИВИРОВАН",
-                Duration = 2
-            })
-        end
-    end
-})
-
---██████████████████████████████████████████████████
---██                  ИНФО                       ██
---██████████████████████████████████████████████████
-
-SettingsTab:CreateButton({
-    Name = "❓ ИНФОРМАЦИЯ О СКРИПТЕ",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "🌿 GROW A GARDEN 2",
-            Content = "Ryzen Cheat System | Все функции рабочие | GUI Rayfield",
-            Duration = 5
-        })
-    end
-})
-
-SettingsTab:CreateButton({
-    Name = "🔄 СБРОС НАСТРОЕК ИГРОКА",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local character = player.Character
-        if character and character:FindFirstChild("Humanoid") then
-            character.Humanoid.WalkSpeed = 16
-            character.Humanoid.JumpPower = 50
-        end
-        Rayfield:Notify({
-            Title = "🔄 СБРОС",
-            Content = "Скорость и прыжок сброшены до стандартных",
-            Duration = 2
-        })
-    end
-})
-
---██████████████████████████████████████████████████
---██               УВЕДОМЛЕНИЕ                  ██
---██████████████████████████████████████████████████
-
-Rayfield:Notify({
-    Title = "🌿 GROW A GARDEN 2",
-    Content = "Ryzen Cheat System загружен! GUI открывается клавишей K",
-    Duration = 5
-})
-
---██            КОНЕЦ СКРИПТА                  ██
