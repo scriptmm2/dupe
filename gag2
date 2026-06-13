@@ -1,10 +1,4 @@
---[[
-    NEON VISUAL DUPER v1.0 - WORKING
-    - Drag by title bar
-    - Resize by bottom-right corner
-    - Visual fake items only
-]]
-
+-- FIXED: NEON DUPER v2.0 - NO MORE DUPLICATE REAL ITEMS
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Backpack = LocalPlayer:WaitForChild("Backpack")
@@ -12,17 +6,15 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
--- Clean old GUI
+-- Kill old GUI
 local oldGui = LocalPlayer.PlayerGui:FindFirstChild("NeonDupeGUI")
 if oldGui then oldGui:Destroy() end
 
--- Create screen gui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NeonDupeGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer.PlayerGui
 
--- Main frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 450, 0, 580)
 MainFrame.Position = UDim2.new(0.5, -225, 0.5, -290)
@@ -32,12 +24,10 @@ MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
--- Corner for main frame
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Neon border (separate frame)
 local NeonBorder = Instance.new("Frame")
 NeonBorder.Size = UDim2.new(1, 6, 1, 6)
 NeonBorder.Position = UDim2.new(0, -3, 0, -3)
@@ -49,7 +39,6 @@ local BorderCorner = Instance.new("UICorner")
 BorderCorner.CornerRadius = UDim.new(0, 14)
 BorderCorner.Parent = NeonBorder
 
--- Title bar
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 45)
 TitleBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -63,7 +52,7 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(1, -70, 1, 0)
 TitleText.Position = UDim2.new(0, 15, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🌀 NEON DUPER [VISUAL ONLY]"
+TitleText.Text = "🌀 NEON DUPER [FIXED]"
 TitleText.TextColor3 = Color3.fromRGB(0, 255, 200)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
@@ -88,7 +77,6 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Resize handle (bottom-right)
 local ResizeHandle = Instance.new("Frame")
 ResizeHandle.Size = UDim2.new(0, 18, 0, 18)
 ResizeHandle.Position = UDim2.new(1, -22, 1, -22)
@@ -100,7 +88,6 @@ local ResizeCorner = Instance.new("UICorner")
 ResizeCorner.CornerRadius = UDim.new(0, 4)
 ResizeCorner.Parent = ResizeHandle
 
--- Scrolling frame for items
 local ItemsScroller = Instance.new("ScrollingFrame")
 ItemsScroller.Size = UDim2.new(1, -24, 0, 380)
 ItemsScroller.Position = UDim2.new(0, 12, 0, 58)
@@ -120,7 +107,6 @@ ItemListLayout.Parent = ItemsScroller
 ItemListLayout.Padding = UDim.new(0, 8)
 ItemListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Bottom panel
 local BottomFrame = Instance.new("Frame")
 BottomFrame.Size = UDim2.new(1, -24, 0, 80)
 BottomFrame.Position = UDim2.new(0, 12, 1, -92)
@@ -167,49 +153,46 @@ CounterLabel.Font = Enum.Font.Gotham
 CounterLabel.TextXAlignment = Enum.TextXAlignment.Left
 CounterLabel.Parent = BottomFrame
 
--- Dragging variables
-local dragging = false
-local dragStartPos = nil
-local dragStartMouse = nil
-
--- Resizing variables
-local resizing = false
-local resizeStartSize = nil
-local resizeStartMouse = nil
-
 -- Data
-local fakeItems = {} -- list of fake item names
+local fakeItems = {}
 local selectedRealItem = nil
 local selectedButton = nil
 local buttons = {}
+local updateQueued = false
 
--- Function to get real items (backpack only, ignore hands for simplicity but works)
-local function getRealItems()
-    local items = {}
+-- Get unique real items (no duplicates)
+local function getUniqueRealItems()
+    local itemMap = {}
     for _, tool in pairs(Backpack:GetChildren()) do
         if tool:IsA("Tool") then
-            table.insert(items, tool.Name)
+            itemMap[tool.Name] = true
         end
     end
-    return items
+    local unique = {}
+    for name in pairs(itemMap) do
+        table.insert(unique, name)
+    end
+    table.sort(unique) -- optional, just for consistency
+    return unique
 end
 
--- Refresh the entire list
+-- Refresh list (with debounce)
 local function refreshList()
+    if updateQueued then return end
+    updateQueued = true
+    task.wait(0.05) -- allow multiple events to merge
+    
     -- Clear existing buttons
     for _, btn in pairs(buttons) do
         btn:Destroy()
     end
     buttons = {}
     
-    local realNames = getRealItems()
+    local realNames = getUniqueRealItems()
     local allItems = {}
-    
-    -- Add real items
     for _, name in ipairs(realNames) do
         table.insert(allItems, {name = name, type = "REAL"})
     end
-    -- Add fake items
     for _, name in ipairs(fakeItems) do
         table.insert(allItems, {name = name, type = "FAKE"})
     end
@@ -227,7 +210,6 @@ local function refreshList()
         btnCorner.CornerRadius = UDim.new(0, 8)
         btnCorner.Parent = btn
         
-        -- Icon bar
         local iconBar = Instance.new("Frame")
         iconBar.Size = UDim2.new(0, 38, 1, 0)
         iconBar.BackgroundColor3 = (info.type == "FAKE") and Color3.fromRGB(180, 50, 255) or Color3.fromRGB(0, 200, 150)
@@ -257,7 +239,6 @@ local function refreshList()
         nameLabel.TextXAlignment = Enum.TextXAlignment.Left
         nameLabel.Parent = btn
         
-        -- Badge
         local badge = Instance.new("TextLabel")
         badge.Size = UDim2.new(0, 70, 0, 18)
         badge.Position = UDim2.new(1, -80, 0.5, -9)
@@ -274,7 +255,6 @@ local function refreshList()
         
         btn.Metadata = info
         
-        -- Hover
         btn.MouseEnter:Connect(function()
             if selectedButton ~= btn then
                 TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = (info.type == "FAKE") and Color3.fromRGB(65, 40, 95) or Color3.fromRGB(45, 45, 65)}):Play()
@@ -286,7 +266,6 @@ local function refreshList()
             end
         end)
         
-        -- Click on REAL items only to select
         if info.type == "REAL" then
             btn.MouseButton1Click:Connect(function()
                 if selectedButton then
@@ -299,9 +278,7 @@ local function refreshList()
                 StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
             end)
         else
-            -- FAKE items can be removed by right-click
             btn.MouseButton2Click:Connect(function()
-                -- Remove this fake item
                 for i, fname in ipairs(fakeItems) do
                     if fname == info.name then
                         table.remove(fakeItems, i)
@@ -312,7 +289,7 @@ local function refreshList()
                 CounterLabel.Text = "Fake: " .. #fakeItems
                 StatusLabel.Text = "🗑️ Removed fake item"
                 StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-                wait(1.2)
+                task.wait(1.2)
                 StatusLabel.Text = selectedRealItem and ("Selected: " .. selectedRealItem) or "Select a real item"
                 StatusLabel.TextColor3 = selectedRealItem and Color3.fromRGB(0, 255, 150) or Color3.fromRGB(160, 160, 200)
             end)
@@ -337,27 +314,27 @@ local function refreshList()
         emptyMsg.Parent = ItemsScroller
         ItemsScroller.CanvasSize = UDim2.new(0, 0, 0, 100)
     end
+    
+    updateQueued = false
 end
 
--- Duplicate selected real item (add fake)
+-- Dupe action
 DupeButton.MouseButton1Click:Connect(function()
     if not selectedRealItem then
         StatusLabel.Text = "❌ No real item selected!"
         StatusLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
         TweenService:Create(DupeButton, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(200, 60, 60)}):Play()
-        wait(0.2)
+        task.wait(0.2)
         TweenService:Create(DupeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 200, 150)}):Play()
-        wait(1)
+        task.wait(1)
         StatusLabel.Text = selectedRealItem and ("Selected: " .. selectedRealItem) or "Select a real item"
         StatusLabel.TextColor3 = selectedRealItem and Color3.fromRGB(0, 255, 150) or Color3.fromRGB(160, 160, 200)
         return
     end
     
-    -- Add fake item
     table.insert(fakeItems, selectedRealItem)
     refreshList()
     
-    -- Flash effect
     local flash = Instance.new("Frame")
     flash.Size = UDim2.new(1, 0, 1, 0)
     flash.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
@@ -366,21 +343,24 @@ DupeButton.MouseButton1Click:Connect(function()
     TweenService:Create(flash, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
     game:GetService("Debris"):AddItem(flash, 0.4)
     
-    -- Animate button
     TweenService:Create(DupeButton, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(255, 100, 200)}):Play()
-    wait(0.1)
+    task.wait(0.1)
     TweenService:Create(DupeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 255, 100)}):Play()
-    wait(0.2)
+    task.wait(0.2)
     TweenService:Create(DupeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 200, 150)}):Play()
     
     StatusLabel.Text = "✨ FAKE copy added: " .. selectedRealItem
     StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 200)
-    wait(1.8)
+    task.wait(1.8)
     StatusLabel.Text = "Selected: " .. selectedRealItem
     StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
 end)
 
--- Dragging logic
+-- Dragging
+local dragging = false
+local dragStartPos = nil
+local dragStartMouse = nil
+
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
@@ -402,7 +382,11 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Resizing logic
+-- Resizing
+local resizing = false
+local resizeStartSize = nil
+local resizeStartMouse = nil
+
 ResizeHandle.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         resizing = true
@@ -429,25 +413,27 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Neon border pulsing
+-- Neon pulse
 RunService.RenderStepped:Connect(function()
     local pulse = (math.sin(tick() * 3) + 1) / 2
     NeonBorder.BackgroundTransparency = 0.5 + pulse * 0.3
     ResizeHandle.BackgroundTransparency = 0.4 + pulse * 0.2
 end)
 
--- Update when backpack changes
-Backpack.ChildAdded:Connect(refreshList)
-Backpack.ChildRemoved:Connect(refreshList)
+-- Events (with debounced refresh)
+local function onBackpackChange()
+    refreshList()
+end
 
--- Initial load
+Backpack.ChildAdded:Connect(onBackpackChange)
+Backpack.ChildRemoved:Connect(onBackpackChange)
+
 refreshList()
 
--- Fade in animation
 MainFrame.BackgroundTransparency = 1
 TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {BackgroundTransparency = 0}):Play()
 
--- Little glow on dupe button
+-- Glow effect
 local glow = Instance.new("Frame")
 glow.Size = UDim2.new(1, 8, 1, 8)
 glow.Position = UDim2.new(0, -4, 0, -4)
@@ -459,13 +445,13 @@ local glowCorner = Instance.new("UICorner")
 glowCorner.CornerRadius = UDim.new(0, 12)
 glowCorner.Parent = glow
 
-spawn(function()
+task.spawn(function()
     while glow and glow.Parent do
         for i = 1, 40 do
             if not glow or not glow.Parent then break end
             glow.BackgroundTransparency = 0.6 + math.sin(tick() * 5) * 0.2
-            wait(0.05)
+            task.wait(0.05)
         end
-        wait()
+        task.wait()
     end
 end)
