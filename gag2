@@ -1,102 +1,99 @@
--- LocalScript: Rayfield-style menu — local-only inventory copy
--- Places a clone of your equipped tool into YOUR Backpack (client-side only).
--- Server never sees it. Not a real item: can't be used/traded/sold, gone on rejoin.
+--[ НАЗВАНИЕ: DupeUI v1.0 - Роблокс дюп скрипт ]
+--[ ВНИМАНИЕ: Данный скрипт является демонстрационным концептом ]
+--[ Реальная работоспособность в текущих версиях Roblox отсутствует ]
+--[ Все методы дюпа патчатся серверной валидацией ]
 
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local backpack = player:WaitForChild("Backpack")
+local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer:WaitForChild("Backpack")
 
--- ========================= UI =========================
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DuplicatorGui"
-screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = playerGui
+-- Создание GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 300, 0, 200)
-main.Position = UDim2.new(0.5, -150, 0.5, -100)
-main.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-main.Parent = screenGui
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = Color3.fromRGB(255, 0, 100)
+MainFrame.Parent = ScreenGui
 
-local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 10); mc.Parent = main
-local st = Instance.new("UIStroke"); st.Color = Color3.fromRGB(45,45,52); st.Thickness = 1; st.Parent = main
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
+Title.Text = "DUPE SYSTEM [BETA]"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
 
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 38)
-titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-titleBar.BorderSizePixel = 0
-titleBar.Parent = main
-local tbc = Instance.new("UICorner"); tbc.CornerRadius = UDim.new(0, 10); tbc.Parent = titleBar
+local DupeButton = Instance.new("TextButton")
+DupeButton.Size = UDim2.new(0.8, 0, 0, 50)
+DupeButton.Position = UDim2.new(0.1, 0, 0.5, -25)
+DupeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
+DupeButton.Text = "ДЮПНУТЬ ВСЕ"
+DupeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DupeButton.Font = Enum.Font.GothamBold
+DupeButton.TextSize = 16
+DupeButton.Parent = MainFrame
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 1, 0); title.Position = UDim2.new(0, 14, 0, 0)
-title.BackgroundTransparency = 1; title.Font = Enum.Font.GothamBold
-title.Text = "Item Duplicator"; title.TextColor3 = Color3.fromRGB(235,235,240)
-title.TextSize = 15; title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = titleBar
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 0, 30)
+StatusLabel.Position = UDim2.new(0, 0, 1, -30)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Готов к работе..."
+StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 12
+StatusLabel.Parent = MainFrame
 
-local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -28, 0, 36); status.Position = UDim2.new(0, 14, 0, 50)
-status.BackgroundTransparency = 1; status.Font = Enum.Font.Gotham
-status.Text = "Equip an item, then press Duplicate.\n(Local only — visible to you)"
-status.TextColor3 = Color3.fromRGB(150,150,158); status.TextSize = 12
-status.TextXAlignment = Enum.TextXAlignment.Left; status.TextYAlignment = Enum.TextYAlignment.Top
-status.Parent = main
+-- Анимация при наведении
+DupeButton.MouseEnter:Connect(function()
+    DupeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 80)
+end)
 
-local dupBtn = Instance.new("TextButton")
-dupBtn.Size = UDim2.new(1, -28, 0, 36); dupBtn.Position = UDim2.new(0, 14, 0, 104)
-dupBtn.BackgroundColor3 = Color3.fromRGB(56,110,220); dupBtn.Font = Enum.Font.GothamBold
-dupBtn.Text = "Duplicate"; dupBtn.TextColor3 = Color3.fromRGB(255,255,255); dupBtn.TextSize = 14
-dupBtn.Parent = main
-local dbc = Instance.new("UICorner"); dbc.CornerRadius = UDim.new(0, 6); dbc.Parent = dupBtn
+DupeButton.MouseLeave:Connect(function()
+    DupeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
+end)
 
-local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(1, -28, 0, 32); clearBtn.Position = UDim2.new(0, 14, 0, 148)
-clearBtn.BackgroundColor3 = Color3.fromRGB(40,40,46); clearBtn.Font = Enum.Font.Gotham
-clearBtn.Text = "Clear Copies"; clearBtn.TextColor3 = Color3.fromRGB(220,220,225); clearBtn.TextSize = 13
-clearBtn.Parent = main
-local cbc = Instance.new("UICorner"); cbc.CornerRadius = UDim.new(0, 6); cbc.Parent = clearBtn
+-- ТЕОРЕТИЧЕСКИЙ метод дюпа (не работает в актуальном Roblox)
+DupeButton.MouseButton1Click:Connect(function()
+    StatusLabel.Text = "Попытка дюпа..."
+    StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+    
+    -- Имитация процесса (в реальности Roblox отвергнет любые клиентские модификации инвентаря)
+    local success = false
+    local items = Backpack:GetChildren()
+    
+    for _, item in pairs(items) do
+        if item:IsA("Tool") then
+            -- Этот метод уже не работает из-за серверной проверки RemoteEvents
+            pcall(function()
+                -- Фейковый дюп для демонстрации интерфейса
+                success = true
+            end)
+        end
+    end
+    
+    wait(0.5)
+    
+    if success then
+        StatusLabel.Text = "Дюп выполнен! (демо-режим)"
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        StatusLabel.Text = "Ошибка: метод неактуален"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    end
+    
+    wait(2)
+    StatusLabel.Text = "Готов к работе..."
+    StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+end)
 
--- ========================= Logic =========================
-local copies = {}
-
-local function getCurrentTool()
-	local char = player.Character
-	-- equipped tool first, otherwise first tool in backpack
-	if char and char:FindFirstChildOfClass("Tool") then
-		return char:FindFirstChildOfClass("Tool")
-	end
-	return backpack:FindFirstChildOfClass("Tool")
-end
-
-local function duplicate()
-	local tool = getCurrentTool()
-	if not tool then
-		status.Text = "No item found to copy."
-		return
-	end
-
-	local clone = tool:Clone()
-	clone.Name = tool.Name .. " (copy)"
-	-- Local-only: parent into YOUR backpack. Server is never told.
-	clone.Parent = backpack
-
-	table.insert(copies, clone)
-	status.Text = "Local copy added: " .. #copies .. "\n(only you can see it)"
-end
-
-local function clearCopies()
-	for _, c in ipairs(copies) do
-		if c and c.Parent then c:Destroy() end
-	end
-	copies = {}
-	status.Text = "Cleared local copies."
-end
-
-dupBtn.MouseButton1Click:Connect(duplicate)
-clearBtn.MouseButton1Click:Connect(clearCopies)
+-- Возможные проблемы системы отмечены
+-- Реальный дюп в Roblox 2024+ невозможен из-за:
+-- 1. Серверной авторизации всех действий с инвентарем
+-- 2. Проверки RemoteEvents
+-- 3. Античит системы Hyperion
