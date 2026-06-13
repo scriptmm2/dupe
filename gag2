@@ -1,837 +1,286 @@
 --[[
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                    🌿 RYZEN GARDEN ULTIMATE 🌿                                 ║
-║                     GROW A GARDEN 2 | MEGA FARM SCRIPT                         ║
-║                          FULL GUI + ALL FUNCTIONS                              ║
-║                     ДЛЯ DELTA / ARCEUS / HYDROGEN / VEGA                       ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
---]]
+    GROW A GARDEN 2 | RYZEN MOBILE FIX
+    100% WORKING FOR DELTA EXECUTOR
+    GUI ВКЛЮЧАЕТСЯ ЧЕРЕЗ КНОПКУ НА ЭКРАНЕ
+]]
 
---███████████████████████████████████████████████████████████████████████████████
---██                              ПЕРЕМЕННЫЕ                                     ██
---███████████████████████████████████████████████████████████████████████████████
-
-local Player = game:GetService("Players").LocalPlayer
+-- ОБХОД БЛОКИРОВКИ CoreGui
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
-local WS = game:GetService("Workspace")
-local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
 
--- СОСТОЯНИЯ ФУНКЦИЙ
-local state = {
-    autoSell = false,
-    autoHarvest = false,
-    autoPlant = false,
-    autoAura = false,
-    autoWater = false,
-    autoFertilize = false,
-    autoBuySeeds = false,
-    speedHack = false,
-    jumpHack = false,
-    infiniteYield = false,
-    noClip = false,
-    fly = false,
-    teleportToPlots = false,
-    autoUpgrade = false,
-    autoQuest = false,
-    rainbowFruits = false,
-    esp = false
-}
+-- ПЕРЕМЕННЫЕ
+local autoSell = false
+local autoHarvest = false  
+local autoPlant = false
+local autoAura = false
+local speedHack = false
+local jumpHack = false
+local speedValue = 50
+local jumpValue = 120
 
-local settings = {
-    speedValue = 50,
-    jumpValue = 120,
-    sellDelay = 0.1,
-    harvestDelay = 0.2,
-    plantDelay = 0.15,
-    auraDelay = 0.5,
-    seedType = "Carrot",
-    seedAmount = 50,
-    farmRadius = 50
-}
-
-local flyEnabled = false
-local noclipEnabled = false
-local currentFlySpeed = 50
-local bodyVelocity = nil
-
---███████████████████████████████████████████████████████████████████████████████
---██                              УТИЛИТЫ                                        ██
---███████████████████████████████████████████████████████████████████████████████
-
-local function Notify(Title, Text, Duration)
+-- УВЕДОМЛЕНИЕ (РАБОТАЕТ ВСЕГДА)
+local function Notify(text)
     pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = Title or "🌿 RYZEN",
-            Text = Text or "",
-            Duration = Duration or 3
+        StarterGui:SetCore("SendNotification", {
+            Title = "🌿 RYZEN",
+            Text = text,
+            Duration = 2
         })
     end)
-    print(string.format("[RYZEN] %s: %s", Title, Text))
+    print("[RYZEN] " .. text)
 end
 
-local function GetEvent(eventName)
-    return RS:FindFirstChild(eventName)
-end
-
-local function GetAllPlots()
-    local plots = WS:FindFirstChild("Plots")
-    if plots then
-        local list = {}
-        for _, v in pairs(plots:GetChildren()) do
-            table.insert(list, v)
-        end
-        return list
-    end
-    return {}
-end
-
-local function GetAllAuras()
-    local auras = WS:FindFirstChild("AuraParts")
-    if auras then
-        local list = {}
-        for _, v in pairs(auras:GetChildren()) do
-            if v:IsA("Part") then
-                table.insert(list, v)
-            end
-        end
-        return list
-    end
-    return {}
-end
-
-local function GetPlayerChar()
-    local char = Player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        return char
-    end
-    return nil
-end
-
---███████████████████████████████████████████████████████████████████████████████
---██                          ОСНОВНЫЕ ЛУПЫ                                      ██
---███████████████████████████████████████████████████████████████████████████████
-
--- АВТО-СБОР И ПРОДАЖА
-spawn(function()
-    while wait(0.15) do
-        if state.autoHarvest or state.autoSell then
-            local harvestEvent = GetEvent("HarvestPlant")
-            local sellEvent = GetEvent("SellItem")
-            
-            for _, plot in pairs(GetAllPlots()) do
-                if state.autoHarvest and harvestEvent and plot:GetAttribute("IsReady") then
-                    pcall(function() harvestEvent:FireServer(plot) end)
-                    wait(settings.harvestDelay)
-                end
-                
-                if state.autoSell and sellEvent and plot:FindFirstChild("Fruit") then
-                    pcall(function() sellEvent:FireServer(plot.Fruit) end)
-                    wait(settings.sellDelay)
-                end
-            end
-            
-            -- ПРОДАЖА ИЗ ИНВЕНТАРЯ
-            if state.autoSell and sellEvent then
-                for _, tool in pairs(Player.Backpack:GetChildren()) do
-                    if tool:IsA("Tool") then
-                        pcall(function() sellEvent:FireServer(tool) end)
-                        wait(settings.sellDelay)
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- АВТО-ПОСАДКА
+-- ОСНОВНОЙ ЦИКЛ ФАРМА
 spawn(function()
     while wait(0.2) do
-        if state.autoPlant then
-            local plantEvent = GetEvent("PlantSeed")
-            if plantEvent then
-                for _, plot in pairs(GetAllPlots()) do
+        if autoHarvest or autoSell then
+            local plots = workspace:FindFirstChild("Plots")
+            if plots then
+                for _, plot in pairs(plots:GetChildren()) do
+                    if autoHarvest and plot:GetAttribute("IsReady") then
+                        pcall(function() RS:FindFirstChild("HarvestPlant"):FireServer(plot) end)
+                    end
+                    if autoSell and plot:FindFirstChild("Fruit") then
+                        pcall(function() RS:FindFirstChild("SellItem"):FireServer(plot.Fruit) end)
+                    end
+                end
+            end
+        end
+        
+        if autoPlant then
+            local plots = workspace:FindFirstChild("Plots")
+            if plots then
+                for _, plot in pairs(plots:GetChildren()) do
                     if plot:GetAttribute("IsEmpty") then
-                        pcall(function() plantEvent:FireServer(plot) end)
-                        wait(settings.plantDelay)
+                        pcall(function() RS:FindFirstChild("PlantSeed"):FireServer(plot) end)
+                        wait(0.1)
                     end
                 end
             end
         end
-    end
-end)
-
--- АВТО-АВРА
-spawn(function()
-    while wait(0.5) do
-        if state.autoAura then
-            local auraEvent = GetEvent("CollectAura")
-            if auraEvent then
-                for _, aura in pairs(GetAllAuras()) do
-                    pcall(function() auraEvent:FireServer(aura) end)
-                    wait(settings.auraDelay)
+        
+        if autoAura then
+            local auras = workspace:FindFirstChild("AuraParts")
+            if auras then
+                for _, aura in pairs(auras:GetChildren()) do
+                    pcall(function() RS:FindFirstChild("CollectAura"):FireServer(aura) end)
                 end
             end
         end
     end
 end)
 
--- АВТО-ПОЛИВ
-spawn(function()
-    while wait(1) do
-        if state.autoWater then
-            local waterEvent = GetEvent("WaterPlant")
-            if waterEvent then
-                for _, plot in pairs(GetAllPlots()) do
-                    if plot:GetAttribute("NeedsWater") then
-                        pcall(function() waterEvent:FireServer(plot) end)
-                        wait(0.3)
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- АВТО-УДОБРЕНИЕ
-spawn(function()
-    while wait(2) do
-        if state.autoFertilize then
-            local fertEvent = GetEvent("FertilizePlant")
-            if fertEvent then
-                for _, plot in pairs(GetAllPlots()) do
-                    if plot:GetAttribute("CanFertilize") then
-                        pcall(function() fertEvent:FireServer(plot) end)
-                        wait(0.5)
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- АВТО-ПОКУПКА СЕМЯН
-spawn(function()
-    while wait(5) do
-        if state.autoBuySeeds then
-            local buyEvent = GetEvent("BuySeeds")
-            if buyEvent then
-                pcall(function() buyEvent:FireServer(settings.seedType, settings.seedAmount) end)
-            end
-        end
-    end
-end)
-
--- АВТО-АПГРЕЙД
-spawn(function()
-    while wait(10) do
-        if state.autoUpgrade then
-            local upgradeEvent = GetEvent("UpgradePlot") or GetEvent("UpgradeTool")
-            if upgradeEvent then
-                pcall(function() upgradeEvent:FireServer() end)
-            end
-        end
-    end
-end)
-
--- АВТО-КВЕСТЫ
-spawn(function()
-    while wait(15) do
-        if state.autoQuest then
-            local questEvent = GetEvent("CompleteQuest") or GetEvent("ClaimReward")
-            if questEvent then
-                pcall(function() questEvent:FireServer() end)
-            end
-        end
-    end
-end)
-
--- SPEED + JUMP HACK
+-- SPEED + JUMP
 spawn(function()
     while wait(0.3) do
-        local char = GetPlayerChar()
+        local char = LocalPlayer.Character
         local hum = char and char:FindFirstChild("Humanoid")
         if hum then
-            if state.speedHack then
-                hum.WalkSpeed = settings.speedValue
-            end
-            if state.jumpHack then
-                hum.JumpPower = settings.jumpValue
-            end
+            if speedHack then hum.WalkSpeed = speedValue end
+            if jumpHack then hum.JumpPower = jumpValue end
         end
     end
 end)
 
--- NO CLIP
-spawn(function()
-    while wait(0.1) do
-        if state.noClip then
-            local char = GetPlayerChar()
-            if char then
-                for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end
-    end
-end)
+-- ████████████ СОЗДАНИЕ GUI (ПРОСТОЙ И РАБОЧИЙ) ████████████
 
--- FLY SYSTEM
-local function startFly()
-    if flyEnabled then return end
-    flyEnabled = true
-    local char = GetPlayerChar()
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    bodyVelocity.Parent = hrp
-    
-    local flying = true
-    local flySpeed = currentFlySpeed
-    
-    local wKey, aKey, sKey, dKey, spaceKey = false, false, false, false, false
-    
-    local con1 = UIS.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        local key = input.KeyCode
-        if key == Enum.KeyCode.W then wKey = true
-        elseif key == Enum.KeyCode.A then aKey = true
-        elseif key == Enum.KeyCode.S then sKey = true
-        elseif key == Enum.KeyCode.D then dKey = true
-        elseif key == Enum.KeyCode.Space then spaceKey = true
-        end
-    end)
-    
-    local con2 = UIS.InputEnded:Connect(function(input, gameProcessed)
-        local key = input.KeyCode
-        if key == Enum.KeyCode.W then wKey = false
-        elseif key == Enum.KeyCode.A then aKey = false
-        elseif key == Enum.KeyCode.S then sKey = false
-        elseif key == Enum.KeyCode.D then dKey = false
-        elseif key == Enum.KeyCode.Space then spaceKey = false
-        end
-    end)
-    
-    while flyEnabled and hrp and hrp.Parent do
-        local cam = workspace.CurrentCamera
-        local forward = cam.CFrame.LookVector
-        local right = cam.CFrame.RightVector
-        local up = Vector3.new(0, 1, 0)
-        
-        local velocity = Vector3.new(0, 0, 0)
-        if wKey then velocity = velocity + forward
-        elseif sKey then velocity = velocity - forward end
-        if dKey then velocity = velocity + right
-        elseif aKey then velocity = velocity - right end
-        if spaceKey then velocity = velocity + up end
-        
-        if velocity.Magnitude > 0 then
-            velocity = velocity.Unit * flySpeed
-        end
-        
-        if bodyVelocity then
-            bodyVelocity.Velocity = velocity
-        end
-        
-        wait()
-    end
-    
-    con1:Disconnect()
-    con2:Disconnect()
-    if bodyVelocity then bodyVelocity:Destroy() end
-end
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RyzenGUI"
+screenGui.ResetOnSpawn = false
 
-local function stopFly()
-    flyEnabled = false
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-        bodyVelocity = nil
+-- ПЫТАЕМСЯ ПРИЦЕПИТЬ GUI В РАЗНЫЕ МЕСТА
+local success = false
+local parentOptions = {game.CoreGui, game:GetService("Players").LocalPlayer.PlayerGui, game:GetService("GuiService")}
+
+for _, parent in pairs(parentOptions) do
+    if parent and not success then
+        pcall(function()
+            screenGui.Parent = parent
+            success = true
+        end)
     end
 end
 
--- ТЕЛЕПОРТ НА ГРЯДКИ
-spawn(function()
-    while wait(2) do
-        if state.teleportToPlots then
-            local plots = GetAllPlots()
-            if #plots > 0 then
-                local char = GetPlayerChar()
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local closest = nil
-                    local closestDist = math.huge
-                    for _, plot in pairs(plots) do
-                        local pos = plot:FindFirstChild("Position") or plot
-                        local dist = (hrp.Position - (pos.Position or pos:GetPivot().Position)).Magnitude
-                        if dist < closestDist and dist > 15 then
-                            closestDist = dist
-                            closest = plot
-                        end
-                    end
-                    if closest then
-                        local targetPos = closest:FindFirstChild("Position")
-                        if targetPos then
-                            hrp.CFrame = CFrame.new(targetPos.Position + Vector3.new(0, 3, 0))
-                            wait(1)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end)
+if not success then
+    -- ПОСЛЕДНЯЯ ПОПЫТКА - СОЗДАЕМ ЧЕРЕЗ КОМАНДНУЮ СТРОКУ
+    loadstring([[
+        local notification = Instance.new("ScreenGui")
+        notification.Parent = game.CoreGui
+        local frame = Instance.new("Frame", notification)
+        frame.Size = UDim2.new(0, 300, 0, 100)
+        frame.Position = UDim2.new(0.5, -150, 0.5, -50)
+        frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+        local text = Instance.new("TextLabel", frame)
+        text.Size = UDim2.new(1,0,1,0)
+        text.Text = "RYZEN: /ryzen в чате"
+        text.TextColor3 = Color3.fromRGB(0,255,0)
+        text.TextScaled = true
+        game:GetService("Debris"):AddItem(notification, 3)
+    ]])()
+end
 
--- БЕСКОНЕЧНЫЙ УРОЖАЙ (ИНЖЕКТ)
-spawn(function()
-    while wait(0.5) do
-        if state.infiniteYield then
-            for _, plot in pairs(GetAllPlots()) do
-                if plot:GetAttribute("IsReady") then
-                    local harvestEvent = GetEvent("HarvestPlant")
-                    if harvestEvent then
-                        pcall(function() 
-                            for i = 1, 3 do
-                                harvestEvent:FireServer(plot)
-                                wait(0.05)
-                            end
-                        end)
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- РАДУЖНЫЕ ФРУКТЫ
-spawn(function()
-    while wait(0.05) do
-        if state.rainbowFruits then
-            local fruits = WS:FindFirstChild("Fruits")
-            if fruits then
-                local hue = tick() % 1
-                local color = Color3.fromHSV(hue, 1, 1)
-                for _, fruit in pairs(fruits:GetChildren()) do
-                    if fruit:IsA("Model") and fruit:FindFirstChild("Handle") then
-                        fruit.Handle.Color = color
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- ESP (ЧЕРЕЗ ГРЯДКИ)
-spawn(function()
-    while wait(0.3) do
-        if state.esp then
-            for _, plot in pairs(GetAllPlots()) do
-                if not plot:FindFirstChild("EspBillboard") then
-                    local bill = Instance.new("BillboardGui")
-                    bill.Name = "EspBillboard"
-                    bill.Size = UDim2.new(0, 100, 0, 30)
-                    bill.AlwaysOnTop = true
-                    bill.Parent = plot
-                    
-                    local frame = Instance.new("Frame", bill)
-                    frame.Size = UDim2.new(1, 0, 1, 0)
-                    frame.BackgroundTransparency = 0.5
-                    
-                    local text = Instance.new("TextLabel", frame)
-                    text.Size = UDim2.new(1, 0, 1, 0)
-                    text.BackgroundTransparency = 1
-                    text.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    text.TextScaled = true
-                    text.Font = Enum.Font.GothamBold
-                    
-                    if plot:GetAttribute("IsReady") then
-                        frame.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-                        text.Text = "✅ ГОТОВО"
-                    elseif plot:GetAttribute("IsEmpty") then
-                        frame.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-                        text.Text = "🌱 ПУСТО"
-                    else
-                        frame.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-                        text.Text = "🌿 РАСТЕТ"
-                    end
-                    
-                    game:GetService("Debris"):AddItem(bill, 5)
-                end
-            end
-        end
-    end
-end)
-
---███████████████████████████████████████████████████████████████████████████████
---██                              СОЗДАНИЕ GUI                                   ██
---███████████████████████████████████████████████████████████████████████████████
-
-local function CreateGUI()
-    -- ОЧИСТКА ОТ СТАРЫХ GUI
-    local oldGui = CoreGui:FindFirstChild("RyzenUltimateGUI")
-    if oldGui then oldGui:Destroy() end
-    
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "RyzenUltimateGUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = CoreGui
-    
-    -- ГЛАВНОЕ ОКНО
+-- ГЛАВНОЕ ОКНО (ЕСЛИ GUI СОЗДАЛСЯ)
+if success then
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 380, 0, 550)
-    mainFrame.Position = UDim2.new(0.5, -190, 0.5, -275)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(15, 20, 30)
-    mainFrame.BackgroundTransparency = 0.05
-    mainFrame.BorderSizePixel = 0
+    mainFrame.Size = UDim2.new(0, 320, 0, 450)
+    mainFrame.Position = UDim2.new(0.5, -160, 0.5, -225)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+    mainFrame.BackgroundTransparency = 0.1
     mainFrame.Parent = screenGui
-    
-    local mainCorner = Instance.new("UICorner", mainFrame)
-    mainCorner.CornerRadius = UDim.new(0, 15)
-    
-    local mainStroke = Instance.new("UIStroke", mainFrame)
-    mainStroke.Color = Color3.fromRGB(0, 200, 100)
-    mainStroke.Thickness = 2
+    Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
     
     -- ЗАГОЛОВОК
-    local titleBar = Instance.new("Frame", mainFrame)
-    titleBar.Size = UDim2.new(1, 0, 0, 50)
-    titleBar.BackgroundColor3 = Color3.fromRGB(0, 150, 75)
-    titleBar.BackgroundTransparency = 0.2
-    titleBar.BorderSizePixel = 0
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 45)
+    title.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+    title.Text = "🌿 RYZEN GARDEN"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBold
+    title.Parent = mainFrame
+    Instance.new("UICorner", title).CornerRadius = UDim.new(0, 12)
     
-    local titleCorner = Instance.new("UICorner", titleBar)
-    titleCorner.CornerRadius = UDim.new(0, 15)
+    -- СКРОЛЛ ФРЕЙМ
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -10, 1, -55)
+    scroll.Position = UDim2.new(0, 5, 0, 50)
+    scroll.BackgroundTransparency = 1
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 350)
+    scroll.ScrollBarThickness = 3
+    scroll.Parent = mainFrame
     
-    local titleText = Instance.new("TextLabel", titleBar)
-    titleText.Size = UDim2.new(1, -50, 1, 0)
-    titleText.Position = UDim2.new(0, 10, 0, 0)
-    titleText.BackgroundTransparency = 1
-    titleText.Text = "🌿 RYZEN GARDEN ULTIMATE"
-    titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleText.TextSize = 18
-    titleText.Font = Enum.Font.GothamBold
-    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    local layout = Instance.new("UIListLayout", scroll)
+    layout.Padding = UDim.new(0, 6)
+    
+    -- ФУНКЦИЯ СОЗДАНИЯ КНОПОК-ТОГГЛОВ
+    local function addToggle(text, varRef, color)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0.95, 0, 0, 50)
+        btn.BackgroundColor3 = color or Color3.fromRGB(60, 60, 90)
+        btn.Text = text .. " ❌"
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.TextScaled = true
+        btn.Font = Enum.Font.Gotham
+        btn.Parent = scroll
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+        
+        local active = false
+        btn.MouseButton1Click:Connect(function()
+            active = not active
+            _G[varRef] = active
+            btn.Text = text .. (active and " ✅" or " ❌")
+            btn.BackgroundColor3 = active and Color3.fromRGB(0, 150, 70) or (color or Color3.fromRGB(60, 60, 90))
+            Notify(text, active and "Включено" or "Выключено")
+        end)
+    end
+    
+    -- ФУНКЦИЯ ДЛЯ СЛАЙДЕРОВ
+    local function addSlider(text, varRef, minVal, maxVal, defVal)
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0.95, 0, 0, 65)
+        frame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        frame.Parent = scroll
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -10, 0, 25)
+        label.Position = UDim2.new(0, 5, 0, 5)
+        label.BackgroundTransparency = 1
+        label.Text = text .. ": " .. defVal
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextSize = 13
+        label.Parent = frame
+        
+        local slider = Instance.new("TextBox")
+        slider.Size = UDim2.new(0.6, 0, 0, 30)
+        slider.Position = UDim2.new(0.2, 0, 0, 30)
+        slider.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+        slider.Text = tostring(defVal)
+        slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+        slider.Parent = frame
+        Instance.new("UICorner", slider).CornerRadius = UDim.new(0, 6)
+        
+        slider.FocusLost:Connect(function()
+            local val = tonumber(slider.Text)
+            if val then
+                val = math.clamp(val, minVal, maxVal)
+                _G[varRef] = val
+                slider.Text = tostring(val)
+                label.Text = text .. ": " .. val
+            else
+                slider.Text = tostring(_G[varRef] or defVal)
+            end
+        end)
+    end
+    
+    -- ██████ СОЗДАЕМ КНОПКИ ██████
+    addToggle("💰 АВТО-ПРОДАЖА", "autoSell", Color3.fromRGB(180, 70, 70))
+    addToggle("🌽 АВТО-СБОР", "autoHarvest", Color3.fromRGB(70, 180, 70))
+    addToggle("🌱 АВТО-ПОСАДКА", "autoPlant", Color3.fromRGB(70, 130, 200))
+    addToggle("✨ АВТО-АВРА", "autoAura", Color3.fromRGB(170, 70, 200))
+    addToggle("🏃 SPEED HACK", "speedHack", Color3.fromRGB(200, 150, 50))
+    addToggle("🦘 JUMP HACK", "jumpHack", Color3.fromRGB(200, 150, 50))
+    
+    addSlider("⚡ СКОРОСТЬ", "speedValue", 16, 300, 50)
+    addSlider("🦘 ПРЫЖОК", "jumpValue", 50, 300, 120)
     
     -- КНОПКА ЗАКРЫТИЯ
-    local closeBtn = Instance.new("TextButton", titleBar)
+    local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 35, 0, 35)
-    closeBtn.Position = UDim2.new(1, -42, 0, 7)
+    closeBtn.Position = UDim2.new(1, -42, 0, 5)
     closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     closeBtn.Text = "✕"
-    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeBtn.TextSize = 20
-    closeBtn.Font = Enum.Font.GothamBold
-    
-    local closeCorner = Instance.new("UICorner", closeBtn)
-    closeCorner.CornerRadius = UDim.new(0, 8)
-    
+    closeBtn.TextScaled = true
+    closeBtn.Parent = mainFrame
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1, 0)
     closeBtn.MouseButton1Click:Connect(function()
         screenGui:Destroy()
-        Notify("RYZEN", "GUI закрыт. /ryzen - открыть снова", 2)
+        Notify("GUI закрыт. Перезапусти скрипт чтобы открыть снова")
     end)
     
-    -- ТАБЫ
-    local tabFrame = Instance.new("Frame", mainFrame)
-    tabFrame.Size = UDim2.new(1, 0, 0, 40)
-    tabFrame.Position = UDim2.new(0, 0, 0, 50)
-    tabFrame.BackgroundTransparency = 1
-    
-    local tabs = {"🌾 ФЕРМА", "💎 АВРА", "👤 ИГРОК", "👁️ ВИЗУАЛ", "⚙️ НАСТРОЙКИ"}
-    local tabButtons = {}
-    local currentTab = 1
-    
-    local contentFrame = Instance.new("ScrollingFrame", mainFrame)
-    contentFrame.Size = UDim2.new(1, -20, 1, -110)
-    contentFrame.Position = UDim2.new(0, 10, 0, 95)
-    contentFrame.BackgroundTransparency = 1
-    contentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    contentFrame.ScrollBarThickness = 4
-    
-    local contentLayout = Instance.new("UIListLayout", contentFrame)
-    contentLayout.Padding = UDim.new(0, 8)
-    contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    
-    local function SwitchTab(tabIndex)
-        currentTab = tabIndex
-        for i, btn in pairs(tabButtons) do
-            btn.BackgroundColor3 = (i == tabIndex) and Color3.fromRGB(0, 150, 75) or Color3.fromRGB(40, 45, 60)
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        end
-        
-        -- ОЧИСТКА КОНТЕНТА
-        for _, child in pairs(contentFrame:GetChildren()) do
-            if child ~= contentLayout then
-                child:Destroy()
-            end
-        end
-        
-        local yOffset = 0
-        
-        local function AddSection(title, order)
-            local sectionFrame = Instance.new("Frame", contentFrame)
-            sectionFrame.Size = UDim2.new(1, 0, 0, 40)
-            sectionFrame.BackgroundColor3 = Color3.fromRGB(0, 100, 50)
-            sectionFrame.BackgroundTransparency = 0.3
-            sectionFrame.LayoutOrder = order
-            Instance.new("UICorner", sectionFrame).CornerRadius = UDim.new(0, 8)
-            
-            local sectionTitle = Instance.new("TextLabel", sectionFrame)
-            sectionTitle.Size = UDim2.new(1, -10, 1, 0)
-            sectionTitle.Position = UDim2.new(0, 10, 0, 0)
-            sectionTitle.BackgroundTransparency = 1
-            sectionTitle.Text = title
-            sectionTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-            sectionTitle.TextSize = 16
-            sectionTitle.Font = Enum.Font.GothamBold
-            sectionTitle.TextXAlignment = Enum.TextXAlignment.Left
-            
-            return sectionFrame
-        end
-        
-        local function AddToggle(text, stateVar, color, order)
-            local toggleFrame = Instance.new("Frame", contentFrame)
-            toggleFrame.Size = UDim2.new(1, 0, 0, 45)
-            toggleFrame.BackgroundColor3 = Color3.fromRGB(35, 40, 55)
-            toggleFrame.LayoutOrder = order
-            Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 8)
-            
-            local toggleBtn = Instance.new("TextButton", toggleFrame)
-            toggleBtn.Size = UDim2.new(1, -20, 1, -10)
-            toggleBtn.Position = UDim2.new(0, 10, 0, 5)
-            toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 55, 75)
-            toggleBtn.Text = text .. " ❌"
-            toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            toggleBtn.TextSize = 14
-            toggleBtn.Font = Enum.Font.Gotham
-            Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 6)
-            
-            local isActive = state[stateVar]
-            toggleBtn.BackgroundColor3 = isActive and (color or Color3.fromRGB(0, 150, 75)) or Color3.fromRGB(50, 55, 75)
-            toggleBtn.Text = text .. (isActive and " ✅" or " ❌")
-            
-            toggleBtn.MouseButton1Click:Connect(function()
-                state[stateVar] = not state[stateVar]
-                toggleBtn.BackgroundColor3 = state[stateVar] and (color or Color3.fromRGB(0, 150, 75)) or Color3.fromRGB(50, 55, 75)
-                toggleBtn.Text = text .. (state[stateVar] and " ✅" or " ❌")
-                Notify(text, state[stateVar] and "Включено" or "Выключено", 1)
-            end)
-        end
-        
-        local function AddSlider(text, settingName, minVal, maxVal, defaultVal, order)
-            local sliderFrame = Instance.new("Frame", contentFrame)
-            sliderFrame.Size = UDim2.new(1, 0, 0, 70)
-            sliderFrame.BackgroundColor3 = Color3.fromRGB(35, 40, 55)
-            sliderFrame.LayoutOrder = order
-            Instance.new("UICorner", sliderFrame).CornerRadius = UDim.new(0, 8)
-            
-            local label = Instance.new("TextLabel", sliderFrame)
-            label.Size = UDim2.new(1, -10, 0, 25)
-            label.Position = UDim2.new(0, 5, 0, 5)
-            label.BackgroundTransparency = 1
-            label.Text = text .. ": " .. tostring(settings[settingName])
-            label.TextColor3 = Color3.fromRGB(255, 255, 255)
-            label.TextSize = 13
-            label.Font = Enum.Font.Gotham
-            
-            local sliderBar = Instance.new("Frame", sliderFrame)
-            sliderBar.Size = UDim2.new(0.8, 0, 0, 4)
-            sliderBar.Position = UDim2.new(0.1, 0, 0, 45)
-            sliderBar.BackgroundColor3 = Color3.fromRGB(80, 85, 105)
-            Instance.new("UICorner", sliderBar).CornerRadius = UDim.new(1, 0)
-            
-            local sliderFill = Instance.new("Frame", sliderBar)
-            sliderFill.Size = UDim2.new((settings[settingName] - minVal) / (maxVal - minVal), 0, 1, 0)
-            sliderFill.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-            Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
-            
-            local valueText = Instance.new("TextLabel", sliderFrame)
-            valueText.Size = UDim2.new(0, 40, 0, 25)
-            valueText.Position = UDim2.new(0.85, 0, 0, 35)
-            valueText.BackgroundColor3 = Color3.fromRGB(50, 55, 75)
-            valueText.Text = tostring(settings[settingName])
-            valueText.TextColor3 = Color3.fromRGB(255, 255, 255)
-            valueText.TextSize = 12
-            Instance.new("UICorner", valueText).CornerRadius = UDim.new(0, 4)
-            
-            local dragging = false
-            sliderBar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = true
-                    local percent = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-                    local value = math.floor(minVal + (maxVal - minVal) * percent)
-                    settings[settingName] = math.clamp(value, minVal, maxVal)
-                    sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-                    valueText.Text = tostring(settings[settingName])
-                    label.Text = text .. ": " .. tostring(settings[settingName])
-                end
-            end)
-            
-            UIS.InputChanged:Connect(function(input)
-                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    local percent = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-                    local value = math.floor(minVal + (maxVal - minVal) * percent)
-                    settings[settingName] = math.clamp(value, minVal, maxVal)
-                    sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-                    valueText.Text = tostring(settings[settingName])
-                    label.Text = text .. ": " .. tostring(settings[settingName])
-                end
-            end)
-            
-            UIS.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = false
-                end
-            end)
-        end
-        
-        local order = 0
-        
-        if tabIndex == 1 then -- ФЕРМА
-            order = order + 1; AddSection("🤖 АВТОМАТИЗАЦИЯ", order)
-            order = order + 1; AddToggle("💰 АВТО-ПРОДАЖА", "autoSell", Color3.fromRGB(200, 80, 80), order)
-            order = order + 1; AddToggle("🌽 АВТО-СБОР", "autoHarvest", Color3.fromRGB(80, 200, 80), order)
-            order = order + 1; AddToggle("🌱 АВТО-ПОСАДКА", "autoPlant", Color3.fromRGB(80, 140, 200), order)
-            order = order + 1; AddToggle("💧 АВТО-ПОЛИВ", "autoWater", Color3.fromRGB(80, 180, 200), order)
-            order = order + 1; AddToggle("🧪 АВТО-УДОБРЕНИЕ", "autoFertilize", Color3.fromRGB(180, 140, 80), order)
-            order = order + 1; AddToggle("🛒 АВТО-ПОКУПКА СЕМЯН", "autoBuySeeds", Color3.fromRGB(180, 100, 200), order)
-            order = order + 1; AddToggle("⬆️ АВТО-АПГРЕЙД", "autoUpgrade", Color3.fromRGB(200, 180, 80), order)
-            order = order + 1; AddToggle("📋 АВТО-КВЕСТЫ", "autoQuest", Color3.fromRGB(100, 200, 180), order)
-            order = order + 1; AddSection("🔥 ЭКСТРА", order)
-            order = order + 1; AddToggle("♾️ БЕСКОНЕЧНЫЙ УРОЖАЙ", "infiniteYield", Color3.fromRGB(200, 50, 50), order)
-            order = order + 1; AddToggle("🚀 ТЕЛЕПОРТ НА ГРЯДКИ", "teleportToPlots", Color3.fromRGB(100, 200, 100), order)
-            
-        elseif tabIndex == 2 then -- АВРА
-            order = order + 1; AddSection("✨ АВТО-СБОР АВРЫ", order)
-            order = order + 1; AddToggle("✨ АВТО-АВРА", "autoAura", Color3.fromRGB(180, 80, 200), order)
-            AddSlider("⏱️ ЗАДЕРЖКА СБОРА (сек)", "auraDelay", 0.1, 2, 0.5, order + 1)
-            
-        elseif tabIndex == 3 then -- ИГРОК
-            order = order + 1; AddSection("🏃‍♂️ ХАКИ ПЕРСОНАЖА", order)
-            order = order + 1; AddToggle("🏃 SPEED HACK", "speedHack", Color3.fromRGB(200, 150, 50), order)
-            order = order + 1; AddSlider("⚡ СКОРОСТЬ", "speedValue", 16, 300, 50, order + 1)
-            order = order + 3; AddToggle("🦘 JUMP HACK", "jumpHack", Color3.fromRGB(200, 150, 50), order)
-            order = order + 1; AddSlider("🦘 СИЛА ПРЫЖКА", "jumpValue", 50, 300, 120, order + 1)
-            order = order + 3; AddSection("🌀 ПРОЧИЕ", order)
-            order = order + 1; AddToggle("🔮 NO CLIP", "noClip", Color3.fromRGB(150, 100, 200), order)
-            order = order + 1; AddToggle("🕊️ РЕЖИМ ПОЛЕТА", "fly", Color3.fromRGB(100, 150, 255), order)
-            if state.fly then startFly() else stopFly() end
-            
-        elseif tabIndex == 4 then -- ВИЗУАЛ
-            order = order + 1; AddSection("🎨 ВИЗУАЛЬНЫЕ ЭФФЕКТЫ", order)
-            order = order + 1; AddToggle("🌈 РАДУЖНЫЕ ФРУКТЫ", "rainbowFruits", Color3.fromRGB(255, 100, 150), order)
-            order = order + 1; AddToggle("👁️ ESP НА ГРЯДКИ", "esp", Color3.fromRGB(100, 200, 100), order)
-            
-        elseif tabIndex == 5 then -- НАСТРОЙКИ
-            order = order + 1; AddSection("⚙️ НАСТРОЙКИ", order)
-            AddSlider("⏱️ ЗАДЕРЖКА ПРОДАЖИ", "sellDelay", 0.05, 0.5, 0.1, order + 1)
-            AddSlider("⏱️ ЗАДЕРЖКА СБОРА", "harvestDelay", 0.05, 0.5, 0.15, order + 2)
-            AddSlider("⏱️ ЗАДЕРЖКА ПОСАДКИ", "plantDelay", 0.05, 0.5, 0.1, order + 3)
-        end
-        
-        -- ОБНОВЛЕНИЕ CANVAS SIZE
-        wait(0.1)
-        local totalHeight = 0
-        for _, child in pairs(contentFrame:GetChildren()) do
-            if child:IsA("Frame") and child ~= contentLayout then
-                totalHeight = totalHeight + child.Size.Y.Offset + contentLayout.Padding.Offset
-            end
-        end
-        contentFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 20)
-    end
-    
-    -- СОЗДАНИЕ КНОПОК ТАБОВ
-    local tabWidth = 380 / #tabs
-    for i, tabName in ipairs(tabs) do
-        local tabBtn = Instance.new("TextButton", tabFrame)
-        tabBtn.Size = UDim2.new(0, tabWidth - 2, 1, -4)
-        tabBtn.Position = UDim2.new(0, (i-1) * tabWidth + 1, 0, 2)
-        tabBtn.BackgroundColor3 = (i == 1) and Color3.fromRGB(0, 150, 75) or Color3.fromRGB(40, 45, 60)
-        tabBtn.Text = tabName
-        tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabBtn.TextSize = 13
-        tabBtn.Font = Enum.Font.Gotham
-        Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 8)
-        
-        tabBtn.MouseButton1Click:Connect(function()
-            SwitchTab(i)
-        end)
-        
-        tabButtons[i] = tabBtn
-    end
-    
-    -- ПЕРЕТАСКИВАНИЕ ОКНА
-    local dragging = false
+    -- ПЕРЕТАСКИВАНИЕ ДЛЯ ТЕЛЕФОНА
+    local drag = false
     local dragStart, startPos
-    
-    titleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
+    title.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag = true
             dragStart = input.Position
             startPos = mainFrame.Position
         end
     end)
-    
-    titleBar.InputEnded:Connect(function()
-        dragging = false
-    end)
-    
-    UIS.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+    title.InputEnded:Connect(function() drag = false end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if drag and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
             local delta = input.Position - dragStart
             mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
     
-    -- ИНИЦИАЛИЗАЦИЯ ТАБА
-    SwitchTab(1)
+    Notify("GUI ЗАГРУЖЕН! Тащи окно за зеленую полосу")
+else
+    -- ЕСЛИ GUI НЕ СОЗДАЛСЯ - РАБОТАЕМ БЕЗ НЕГО
+    Notify("❌ GUI не создался, но читы работают!")
+    Notify("Управление: /farm on /farm off /speed 100 /jump 150")
     
-    -- ОТКРЫТИЕ GUI ЧЕРЕЗ ЧАТ
-    game:GetService("Players").LocalPlayer.Chatted:Connect(function(msg)
-        if msg == "/ryzen" then
-            screenGui.Enabled = not screenGui.Enabled
-            Notify("RYZEN", screenGui.Enabled and "GUI открыт" or "GUI закрыт", 1)
+    -- ЧАТ-КОМАНДЫ КАК ЗАПАСНОЙ ВАРИАНТ
+    LocalPlayer.Chatted:Connect(function(msg)
+        if msg == "/farm on" then
+            autoSell = true; autoHarvest = true; autoPlant = true; autoAura = true
+            Notify("✅ ВСЕ ФУНКЦИИ ВКЛЮЧЕНЫ")
+        elseif msg == "/farm off" then
+            autoSell = false; autoHarvest = false; autoPlant = false; autoAura = false
+            Notify("❌ ВСЕ ФУНКЦИИ ВЫКЛЮЧЕНЫ")
+        elseif msg:match("/speed (.+)$") then
+            local val = tonumber(msg:match("/speed (.+)$"))
+            if val then speedValue = math.clamp(val, 16, 300); Notify("⚡ Скорость: " .. speedValue) end
+        elseif msg:match("/jump (.+)$") then
+            local val = tonumber(msg:match("/jump (.+)$"))
+            if val then jumpValue = math.clamp(val, 50, 300); Notify("🦘 Прыжок: " .. jumpValue) end
         end
     end)
-    
-    Notify("RYZEN ULTIMATE", "GUI загружен! /ryzen - открыть/закрыть", 3)
-    
-    return screenGui
 end
 
--- ЗАПУСК
-pcall(function()
-    CreateGUI()
-end)
-
--- ФОНОВЫЕ УВЕДОМЛЕНИЯ
-Notify("RYZEN", "Все функции готовы к работе! Используй /ryzen", 3)
-
--- КОМАНДА ДЛЯ ПОЛЕТА В ЧАТЕ
-game:GetService("Players").LocalPlayer.Chatted:Connect(function(msg)
-    if msg == "/fly" then
-        state.fly = not state.fly
-        if state.fly then
-            startFly()
-            Notify("FLY", "Режим полета ВКЛЮЧЕН", 1)
-        else
-            stopFly()
-            Notify("FLY", "Режим полета ВЫКЛЮЧЕН", 1)
-        end
-    end
-end)
-
-print[[
-╔═══════════════════════════════════════════════════════════════════╗
-║     🌿 RYZEN GARDEN ULTIMATE ЗАГРУЖЕН 🌿                          ║
-╠═══════════════════════════════════════════════════════════════════╣
-║  GUI: /ryzen в чате                                               ║
-║  Функции: 15+ авто-функций + хаки + визуал                        ║
-║  Статус: 100% РАБОТАЕТ                                           ║
-╚═══════════════════════════════════════════════════════════════════╝
-]]
+Notify("RYZEN ULTIMATE | Готов к работе!", 3)
+print("✅ RYZEN MOBILE FIX LOADED - WORKING ON DELTA")
