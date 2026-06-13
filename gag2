@@ -1,10 +1,9 @@
---[ NAME: DupeUI v3.0 - Visual Clone Only ]
---[ REAL DUPLICATION IS IMPOSSIBLE IN ROBLOX 2024+ ]
---[ THIS IS VISUAL EFFECT ONLY, NOT REAL ITEM DUPLICATION ]
+--[ DUPE UI v4.0 - VISUAL ONLY | NO REAL DUPE | ITEMS FROM BOTH BACKPACK & CHARACTER ]
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Backpack = LocalPlayer:WaitForChild("Backpack")
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
@@ -17,43 +16,43 @@ ScreenGui.Name = "DupeGUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 360, 0, 520)
-MainFrame.Position = UDim2.new(0.5, -180, 0.5, -260)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+MainFrame.Size = UDim2.new(0, 380, 0, 540)
+MainFrame.Position = UDim2.new(0.5, -190, 0.5, -270)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
 MainFrame.BackgroundTransparency = 0
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
+Corner.CornerRadius = UDim.new(0, 14)
 Corner.Parent = MainFrame
 
 local Glow = Instance.new("Frame")
-Glow.Size = UDim2.new(1, 4, 1, 4)
-Glow.Position = UDim2.new(0, -2, 0, -2)
-Glow.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
-Glow.BackgroundTransparency = 0.8
+Glow.Size = UDim2.new(1, 6, 1, 6)
+Glow.Position = UDim2.new(0, -3, 0, -3)
+Glow.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
+Glow.BackgroundTransparency = 0.85
 Glow.BorderSizePixel = 0
 Glow.Parent = MainFrame
 local GlowCorner = Instance.new("UICorner")
-GlowCorner.CornerRadius = UDim.new(0, 14)
+GlowCorner.CornerRadius = UDim.new(0, 16)
 GlowCorner.Parent = Glow
 
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 44)
-TitleBar.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
+TitleBar.Size = UDim2.new(1, 0, 0, 46)
+TitleBar.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
 TitleBar.BackgroundTransparency = 0
 TitleBar.Parent = MainFrame
 local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.CornerRadius = UDim.new(0, 14)
 TitleCorner.Parent = TitleBar
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -50, 1, 0)
-TitleLabel.Position = UDim2.new(0, 16, 0, 0)
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
+TitleLabel.Position = UDim2.new(0, 18, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "DUPE SYSTEM v3"
+TitleLabel.Text = "DUPE SYSTEM v4"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 18
@@ -61,10 +60,10 @@ TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 32, 0, 32)
-CloseBtn.Position = UDim2.new(1, -42, 0, 6)
+CloseBtn.Size = UDim2.new(0, 34, 0, 34)
+CloseBtn.Position = UDim2.new(1, -44, 0, 6)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.BackgroundTransparency = 0.9
+CloseBtn.BackgroundTransparency = 0.85
 CloseBtn.Text = "✕"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.TextSize = 18
@@ -100,14 +99,14 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 local ItemsContainer = Instance.new("ScrollingFrame")
-ItemsContainer.Size = UDim2.new(1, -24, 0, 320)
-ItemsContainer.Position = UDim2.new(0, 12, 0, 60)
-ItemsContainer.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+ItemsContainer.Size = UDim2.new(1, -24, 0, 330)
+ItemsContainer.Position = UDim2.new(0, 12, 0, 62)
+ItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 ItemsContainer.BackgroundTransparency = 0
 ItemsContainer.BorderSizePixel = 0
 ItemsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 ItemsContainer.ScrollBarThickness = 6
-ItemsContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 100)
+ItemsContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 30, 110)
 ItemsContainer.Parent = MainFrame
 local ContainerCorner = Instance.new("UICorner")
 ContainerCorner.CornerRadius = UDim.new(0, 10)
@@ -119,9 +118,9 @@ ItemLayout.Padding = UDim.new(0, 8)
 ItemLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local DupeBtn = Instance.new("TextButton")
-DupeBtn.Size = UDim2.new(0.85, 0, 0, 52)
-DupeBtn.Position = UDim2.new(0.075, 0, 1, -72)
-DupeBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
+DupeBtn.Size = UDim2.new(0.85, 0, 0, 54)
+DupeBtn.Position = UDim2.new(0.075, 0, 1, -74)
+DupeBtn.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
 DupeBtn.BackgroundTransparency = 0
 DupeBtn.Text = "DUPLICATE SELECTED"
 DupeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -133,11 +132,11 @@ DupeCorner.CornerRadius = UDim.new(0, 10)
 DupeCorner.Parent = DupeBtn
 
 local StatusText = Instance.new("TextLabel")
-StatusText.Size = UDim2.new(1, -24, 0, 28)
-StatusText.Position = UDim2.new(0, 12, 1, -36)
+StatusText.Size = UDim2.new(1, -24, 0, 30)
+StatusText.Position = UDim2.new(0, 12, 1, -38)
 StatusText.BackgroundTransparency = 1
-StatusText.Text = "Select an item to duplicate"
-StatusText.TextColor3 = Color3.fromRGB(160, 160, 180)
+StatusText.Text = "Select an item"
+StatusText.TextColor3 = Color3.fromRGB(170, 170, 190)
 StatusText.TextSize = 12
 StatusText.Font = Enum.Font.Gotham
 StatusText.Parent = MainFrame
@@ -146,27 +145,39 @@ local selectedItemName = nil
 local selectedButton = nil
 local itemButtons = {}
 
+local function getAllItems()
+    local items = {}
+    for _, item in pairs(Backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            table.insert(items, {name = item.Name, source = "Backpack"})
+        end
+    end
+    if Character then
+        for _, item in pairs(Character:GetChildren()) do
+            if item:IsA("Tool") then
+                table.insert(items, {name = item.Name, source = "Hand"})
+            end
+        end
+    end
+    return items
+end
+
 local function updateInventoryDisplay()
     for _, btn in pairs(itemButtons) do
         btn:Destroy()
     end
     itemButtons = {}
     
-    local items = {}
-    for _, item in pairs(Backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            table.insert(items, item)
-        end
-    end
-    
+    local items = getAllItems()
     local canvasY = 0
     
-    for _, item in pairs(items) do
+    for _, info in pairs(items) do
         local itemBtn = Instance.new("TextButton")
         itemBtn.Size = UDim2.new(0.94, 0, 0, 48)
         itemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
         itemBtn.BackgroundTransparency = 0
-        itemBtn.Text = "📦 " .. item.Name
+        local sourceIcon = (info.source == "Hand") and "✋ " or "🎒 "
+        itemBtn.Text = sourceIcon .. info.name
         itemBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
         itemBtn.TextSize = 14
         itemBtn.Font = Enum.Font.GothamSemibold
@@ -177,9 +188,9 @@ local function updateInventoryDisplay()
         BtnCorner.Parent = itemBtn
         
         local iconFrame = Instance.new("Frame")
-        iconFrame.Size = UDim2.new(0, 32, 1, 0)
-        iconFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
-        iconFrame.BackgroundTransparency = 0.8
+        iconFrame.Size = UDim2.new(0, 34, 1, 0)
+        iconFrame.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
+        iconFrame.BackgroundTransparency = 0.7
         iconFrame.Parent = itemBtn
         local IconCorner = Instance.new("UICorner")
         IconCorner.CornerRadius = UDim.new(0, 8)
@@ -202,16 +213,15 @@ local function updateInventoryDisplay()
                 selectedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
             end
             selectedButton = itemBtn
-            selectedItemName = item.Name
-            itemBtn.BackgroundColor3 = Color3.fromRGB(100, 30, 150)
-            StatusText.Text = "Selected: " .. selectedItemName
+            selectedItemName = info.name
+            itemBtn.BackgroundColor3 = Color3.fromRGB(130, 40, 180)
+            StatusText.Text = "Selected: " .. selectedItemName .. " [" .. info.source .. "]"
             StatusText.TextColor3 = Color3.fromRGB(0, 255, 150)
             
-            local tween = TweenService:Create(itemBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(120, 40, 170)})
-            tween:Play()
+            TweenService:Create(itemBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(140, 50, 190)}):Play()
         end)
         
-        itemButtons[item.Name] = itemBtn
+        itemButtons[info.name .. info.source] = itemBtn
         canvasY = canvasY + 56
     end
     
@@ -221,7 +231,7 @@ local function updateInventoryDisplay()
         local emptyLabel = Instance.new("TextLabel")
         emptyLabel.Size = UDim2.new(1, 0, 0, 60)
         emptyLabel.BackgroundTransparency = 1
-        emptyLabel.Text = "✨ No items in backpack ✨"
+        emptyLabel.Text = "🕳️ No items (backpack or hands)"
         emptyLabel.TextColor3 = Color3.fromRGB(120, 120, 140)
         emptyLabel.TextSize = 14
         emptyLabel.Font = Enum.Font.Gotham
@@ -231,49 +241,35 @@ local function updateInventoryDisplay()
 end
 
 DupeBtn.MouseEnter:Connect(function()
-    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(220, 30, 80)}):Play()
+    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(220, 20, 90)}):Play()
 end)
 
 DupeBtn.MouseLeave:Connect(function()
-    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 50, 100)}):Play()
+    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 30, 110)}):Play()
 end)
 
 DupeBtn.MouseButton1Click:Connect(function()
     if not selectedItemName then
         StatusText.Text = "❌ No item selected!"
-        StatusText.TextColor3 = Color3.fromRGB(255, 80, 80)
-        TweenService:Create(StatusText, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(255, 80, 80)}):Play()
+        StatusText.TextColor3 = Color3.fromRGB(255, 70, 70)
         wait(1.5)
-        StatusText.Text = "Select an item to duplicate"
-        StatusText.TextColor3 = Color3.fromRGB(160, 160, 180)
+        StatusText.Text = "Select an item"
+        StatusText.TextColor3 = Color3.fromRGB(170, 170, 190)
         return
     end
     
-    local realItem = nil
-    for _, item in pairs(Backpack:GetChildren()) do
-        if item:IsA("Tool") and item.Name == selectedItemName then
-            realItem = item
-            break
-        end
-    end
-    
-    if not realItem then
-        StatusText.Text = "❌ Item not found!"
-        return
-    end
-    
-    StatusText.Text = "🔮 Duplicating " .. selectedItemName .. "..."
+    StatusText.Text = "🌀 Duplicating " .. selectedItemName .. " (visual)..."
     StatusText.TextColor3 = Color3.fromRGB(255, 200, 50)
     
-    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(150, 0, 200)}):Play()
+    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(180, 0, 200)}):Play()
     
-    wait(0.3)
+    wait(0.4)
     
     local fakeClone = Instance.new("Frame")
-    fakeClone.Size = UDim2.new(0.9, 0, 0, 44)
-    fakeClone.Position = UDim2.new(0.05, 0, 0.2, 0)
-    fakeClone.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-    fakeClone.BackgroundTransparency = 0.2
+    fakeClone.Size = UDim2.new(0.85, 0, 0, 44)
+    fakeClone.Position = UDim2.new(0.075, 0, 0.25, 0)
+    fakeClone.BackgroundColor3 = Color3.fromRGB(0, 210, 110)
+    fakeClone.BackgroundTransparency = 0.15
     fakeClone.BorderSizePixel = 0
     fakeClone.Parent = MainFrame
     local CloneCorner = Instance.new("UICorner")
@@ -283,32 +279,41 @@ DupeBtn.MouseButton1Click:Connect(function()
     local cloneText = Instance.new("TextLabel")
     cloneText.Size = UDim2.new(1, 0, 1, 0)
     cloneText.BackgroundTransparency = 1
-    cloneText.Text = "+ " .. selectedItemName .. " [VISUAL COPY]"
+    cloneText.Text = "✨ +1 " .. selectedItemName .. " [VISUAL ONLY]"
     cloneText.TextColor3 = Color3.fromRGB(0, 255, 150)
     cloneText.TextSize = 13
     cloneText.Font = Enum.Font.GothamBold
     cloneText.Parent = fakeClone
     
-    for i = 1, 25 do
-        wait(0.03)
-        fakeClone.Position = UDim2.new(0.05, 0, 0.2, i * 3)
-        fakeClone.BackgroundTransparency = 0.2 + (i / 25) * 0.8
-        cloneText.TextTransparency = (i / 25)
+    for i = 1, 30 do
+        wait(0.025)
+        fakeClone.Position = UDim2.new(0.075, 0, 0.25, i * 2.5)
+        fakeClone.BackgroundTransparency = 0.15 + (i / 30) * 0.85
+        cloneText.TextTransparency = (i / 30)
     end
     
     fakeClone:Destroy()
     
-    StatusText.Text = "✅ Visual duplicate added! +1 " .. selectedItemName
-    StatusText.TextColor3 = Color3.fromRGB(0, 255, 100)
-    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 100)}):Play()
+    StatusText.Text = "⚠️ VISUAL duplicate done! NOT REAL item."
+    StatusText.TextColor3 = Color3.fromRGB(255, 255, 100)
+    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 30, 110)}):Play()
     
-    wait(2)
-    StatusText.Text = "Select an item to duplicate"
-    StatusText.TextColor3 = Color3.fromRGB(160, 160, 180)
+    wait(2.5)
+    StatusText.Text = "Select an item"
+    StatusText.TextColor3 = Color3.fromRGB(170, 170, 190)
+end)
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    updateInventoryDisplay()
 end)
 
 Backpack.ChildAdded:Connect(updateInventoryDisplay)
 Backpack.ChildRemoved:Connect(updateInventoryDisplay)
+if Character then
+    Character.ChildAdded:Connect(updateInventoryDisplay)
+    Character.ChildRemoved:Connect(updateInventoryDisplay)
+end
 
 updateInventoryDisplay()
 
