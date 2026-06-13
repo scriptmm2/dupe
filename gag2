@@ -1,0 +1,63 @@
+-- LocalScript (StarterPlayerScripts)
+
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Основной фрейм
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 180)
+frame.Position = UDim2.new(0.5, -130, 0.5, -90)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 15)
+corner.Parent = frame
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "Visual Duper"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextScaled = true
+title.Parent = frame
+
+-- Список предметов
+local inventory = Instance.new("ScrollingFrame")
+inventory.Size = UDim2.new(1, -20, 0, 90)
+inventory.Position = UDim2.new(0, 10, 0, 50)
+inventory.CanvasSize = UDim2.new(0,0,0,0)
+inventory.BackgroundColor3 = Color3.fromRGB(45,45,55)
+inventory.Parent = frame
+
+local layout = Instance.new("UIListLayout")
+layout.Parent = inventory
+
+-- Первый предмет
+local function createItem(name)
+	local item = Instance.new("TextLabel")
+	item.Size = UDim2.new(1, -5, 0, 30)
+	item.BackgroundColor3 = Color3.fromRGB(70,70,90)
+	item.TextColor3 = Color3.new(1,1,1)
+	item.Text = name
+	item.Parent = inventory
+end
+
+createItem("Sword")
+
+-- Кнопка "дюпа"
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0.8, 0, 0, 40)
+button.Position = UDim2.new(0.1, 0, 1, -50)
+button.Text = "Duplicate Visual"
+button.BackgroundColor3 = Color3.fromRGB(0,170,255)
+button.TextColor3 = Color3.new(1,1,1)
+button.Parent = frame
+
+button.MouseButton1Click:Connect(function()
+	createItem("Sword (Copy)")
+	inventory.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y)
+end)
