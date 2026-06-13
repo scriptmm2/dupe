@@ -1,10 +1,11 @@
--- LocalScript: Rayfield-style menu with a single "Duplicate" section
--- Client-side visual clone (visible only to you, no server effect)
+-- LocalScript: Rayfield-style menu — local-only inventory copy
+-- Places a clone of your equipped tool into YOUR Backpack (client-side only).
+-- Server never sees it. Not a real item: can't be used/traded/sold, gone on rejoin.
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local backpack = player:WaitForChild("Backpack")
 
 -- ========================= UI =========================
 local screenGui = Instance.new("ScreenGui")
@@ -13,169 +14,89 @@ screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
--- Main window
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 300, 0, 210)
-main.Position = UDim2.new(0.5, -150, 0.5, -105)
+main.Size = UDim2.new(0, 300, 0, 200)
+main.Position = UDim2.new(0.5, -150, 0.5, -100)
 main.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
 main.BorderSizePixel = 0
 main.Active = true
-main.Draggable = true -- can drag the window
+main.Draggable = true
 main.Parent = screenGui
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 10)
-mainCorner.Parent = main
+local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 10); mc.Parent = main
+local st = Instance.new("UIStroke"); st.Color = Color3.fromRGB(45,45,52); st.Thickness = 1; st.Parent = main
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(45, 45, 52)
-stroke.Thickness = 1
-stroke.Parent = main
-
--- Title bar
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 38)
 titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = main
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 10)
-titleCorner.Parent = titleBar
+local tbc = Instance.new("UICorner"); tbc.CornerRadius = UDim.new(0, 10); tbc.Parent = titleBar
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 1, 0)
-title.Position = UDim2.new(0, 14, 0, 0)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.Text = "Item Duplicator"
-title.TextColor3 = Color3.fromRGB(235, 235, 240)
-title.TextSize = 15
-title.TextXAlignment = Enum.TextXAlignment.Left
+title.Size = UDim2.new(1, -20, 1, 0); title.Position = UDim2.new(0, 14, 0, 0)
+title.BackgroundTransparency = 1; title.Font = Enum.Font.GothamBold
+title.Text = "Item Duplicator"; title.TextColor3 = Color3.fromRGB(235,235,240)
+title.TextSize = 15; title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
--- Section tab
-local tab = Instance.new("TextLabel")
-tab.Size = UDim2.new(0, 120, 0, 26)
-tab.Position = UDim2.new(0, 14, 0, 50)
-tab.BackgroundColor3 = Color3.fromRGB(34, 34, 40)
-tab.Font = Enum.Font.GothamSemibold
-tab.Text = "Duplicate"
-tab.TextColor3 = Color3.fromRGB(220, 220, 225)
-tab.TextSize = 13
-tab.Parent = main
-
-local tabCorner = Instance.new("UICorner")
-tabCorner.CornerRadius = UDim.new(0, 6)
-tabCorner.Parent = tab
-
--- Status label
 local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -28, 0, 20)
-status.Position = UDim2.new(0, 14, 0, 88)
-status.BackgroundTransparency = 1
-status.Font = Enum.Font.Gotham
-status.Text = "Equip an item and press Duplicate"
-status.TextColor3 = Color3.fromRGB(150, 150, 158)
-status.TextSize = 12
-status.TextXAlignment = Enum.TextXAlignment.Left
+status.Size = UDim2.new(1, -28, 0, 36); status.Position = UDim2.new(0, 14, 0, 50)
+status.BackgroundTransparency = 1; status.Font = Enum.Font.Gotham
+status.Text = "Equip an item, then press Duplicate.\n(Local only — visible to you)"
+status.TextColor3 = Color3.fromRGB(150,150,158); status.TextSize = 12
+status.TextXAlignment = Enum.TextXAlignment.Left; status.TextYAlignment = Enum.TextYAlignment.Top
 status.Parent = main
 
--- Duplicate button
 local dupBtn = Instance.new("TextButton")
-dupBtn.Size = UDim2.new(1, -28, 0, 36)
-dupBtn.Position = UDim2.new(0, 14, 0, 116)
-dupBtn.BackgroundColor3 = Color3.fromRGB(56, 110, 220)
-dupBtn.Font = Enum.Font.GothamBold
-dupBtn.Text = "Duplicate"
-dupBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-dupBtn.TextSize = 14
-dupBtn.AutoButtonColor = true
+dupBtn.Size = UDim2.new(1, -28, 0, 36); dupBtn.Position = UDim2.new(0, 14, 0, 104)
+dupBtn.BackgroundColor3 = Color3.fromRGB(56,110,220); dupBtn.Font = Enum.Font.GothamBold
+dupBtn.Text = "Duplicate"; dupBtn.TextColor3 = Color3.fromRGB(255,255,255); dupBtn.TextSize = 14
 dupBtn.Parent = main
+local dbc = Instance.new("UICorner"); dbc.CornerRadius = UDim.new(0, 6); dbc.Parent = dupBtn
 
-local dupCorner = Instance.new("UICorner")
-dupCorner.CornerRadius = UDim.new(0, 6)
-dupCorner.Parent = dupBtn
-
--- Clear button
 local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(1, -28, 0, 32)
-clearBtn.Position = UDim2.new(0, 14, 0, 160)
-clearBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
-clearBtn.Font = Enum.Font.Gotham
-clearBtn.Text = "Clear Clones"
-clearBtn.TextColor3 = Color3.fromRGB(220, 220, 225)
-clearBtn.TextSize = 13
+clearBtn.Size = UDim2.new(1, -28, 0, 32); clearBtn.Position = UDim2.new(0, 14, 0, 148)
+clearBtn.BackgroundColor3 = Color3.fromRGB(40,40,46); clearBtn.Font = Enum.Font.Gotham
+clearBtn.Text = "Clear Copies"; clearBtn.TextColor3 = Color3.fromRGB(220,220,225); clearBtn.TextSize = 13
 clearBtn.Parent = main
-
-local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 6)
-clearCorner.Parent = clearBtn
+local cbc = Instance.new("UICorner"); cbc.CornerRadius = UDim.new(0, 6); cbc.Parent = clearBtn
 
 -- ========================= Logic =========================
-local clones = {}
-local connections = {}
+local copies = {}
 
-local function getEquippedTool()
+local function getCurrentTool()
 	local char = player.Character
-	if not char then return nil end
-	return char:FindFirstChildOfClass("Tool")
+	-- equipped tool first, otherwise first tool in backpack
+	if char and char:FindFirstChildOfClass("Tool") then
+		return char:FindFirstChildOfClass("Tool")
+	end
+	return backpack:FindFirstChildOfClass("Tool")
 end
 
 local function duplicate()
-	local tool = getEquippedTool()
+	local tool = getCurrentTool()
 	if not tool then
-		status.Text = "No item equipped"
+		status.Text = "No item found to copy."
 		return
 	end
 
-	local handle = tool:FindFirstChild("Handle")
-	if not handle then
-		status.Text = "Item has no Handle"
-		return
-	end
+	local clone = tool:Clone()
+	clone.Name = tool.Name .. " (copy)"
+	-- Local-only: parent into YOUR backpack. Server is never told.
+	clone.Parent = backpack
 
-	local clone = handle:Clone()
-
-	-- IMPORTANT: remove anything that links the clone to your body,
-	-- otherwise moving the clone drags you into the air.
-	for _, d in ipairs(clone:GetDescendants()) do
-		if d:IsA("Weld") or d:IsA("WeldConstraint") or d:IsA("Motor6D")
-			or d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Sound") then
-			d:Destroy()
-		end
-	end
-
-	clone.Anchored = true
-	clone.CanCollide = false
-	clone.CanTouch = false
-	clone.Massless = true
-	clone.Transparency = math.clamp(handle.Transparency + 0.15, 0, 0.6)
-	clone.Parent = workspace -- client-only => visible only to you
-
-	local offset = CFrame.new(0, 3, 0)
-
-	local conn = RunService.RenderStepped:Connect(function()
-		if not handle or not handle.Parent then return end
-		clone.CFrame = handle.CFrame * offset
-	end)
-
-	table.insert(clones, clone)
-	table.insert(connections, conn)
-	status.Text = "Duplicated! Clones: " .. #clones
+	table.insert(copies, clone)
+	status.Text = "Local copy added: " .. #copies .. "\n(only you can see it)"
 end
 
-local function clearClones()
-	for _, conn in ipairs(connections) do
-		if conn.Connected then conn:Disconnect() end
-	end
-	for _, c in ipairs(clones) do
+local function clearCopies()
+	for _, c in ipairs(copies) do
 		if c and c.Parent then c:Destroy() end
 	end
-	clones = {}
-	connections = {}
-	status.Text = "Cleared all clones"
+	copies = {}
+	status.Text = "Cleared local copies."
 end
 
 dupBtn.MouseButton1Click:Connect(duplicate)
-clearBtn.MouseButton1Click:Connect(clearClones)
+clearBtn.MouseButton1Click:Connect(clearCopies)
