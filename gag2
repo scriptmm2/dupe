@@ -1,40 +1,120 @@
--- LocalScript: визуальный клиентский дубликат предмета в руке (виден только тебе)
+-- LocalScript: Rayfield-style menu with a single "Duplicate" section
+-- Client-side visual clone (visible only to you, no server effect)
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- ===== Создаём GUI с кнопкой =====
+-- ========================= UI =========================
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DupeGui"
+screenGui.Name = "DuplicatorGui"
 screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0, 160, 0, 50)
-button.Position = UDim2.new(0, 20, 0.5, -25)
-button.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.GothamBold
-button.TextSize = 16
-button.Text = "Дублировать"
-button.Parent = screenGui
+-- Main window
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 300, 0, 210)
+main.Position = UDim2.new(0.5, -150, 0.5, -105)
+main.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true -- can drag the window
+main.Parent = screenGui
 
-local clearButton = Instance.new("TextButton")
-clearButton.Size = UDim2.new(0, 160, 0, 40)
-clearButton.Position = UDim2.new(0, 20, 0.5, 30)
-clearButton.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
-clearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearButton.Font = Enum.Font.Gotham
-clearButton.TextSize = 14
-clearButton.Text = "Убрать клоны"
-clearButton.Parent = screenGui
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 10)
+mainCorner.Parent = main
 
--- ===== Логика =====
-local clones = {}      -- список созданных клонов
-local connections = {} -- связи RenderStepped для слежения
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(45, 45, 52)
+stroke.Thickness = 1
+stroke.Parent = main
 
-local RunService = game:GetService("RunService")
+-- Title bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 38)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = main
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 1, 0)
+title.Position = UDim2.new(0, 14, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Text = "Item Duplicator"
+title.TextColor3 = Color3.fromRGB(235, 235, 240)
+title.TextSize = 15
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+-- Section tab
+local tab = Instance.new("TextLabel")
+tab.Size = UDim2.new(0, 120, 0, 26)
+tab.Position = UDim2.new(0, 14, 0, 50)
+tab.BackgroundColor3 = Color3.fromRGB(34, 34, 40)
+tab.Font = Enum.Font.GothamSemibold
+tab.Text = "Duplicate"
+tab.TextColor3 = Color3.fromRGB(220, 220, 225)
+tab.TextSize = 13
+tab.Parent = main
+
+local tabCorner = Instance.new("UICorner")
+tabCorner.CornerRadius = UDim.new(0, 6)
+tabCorner.Parent = tab
+
+-- Status label
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -28, 0, 20)
+status.Position = UDim2.new(0, 14, 0, 88)
+status.BackgroundTransparency = 1
+status.Font = Enum.Font.Gotham
+status.Text = "Equip an item and press Duplicate"
+status.TextColor3 = Color3.fromRGB(150, 150, 158)
+status.TextSize = 12
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.Parent = main
+
+-- Duplicate button
+local dupBtn = Instance.new("TextButton")
+dupBtn.Size = UDim2.new(1, -28, 0, 36)
+dupBtn.Position = UDim2.new(0, 14, 0, 116)
+dupBtn.BackgroundColor3 = Color3.fromRGB(56, 110, 220)
+dupBtn.Font = Enum.Font.GothamBold
+dupBtn.Text = "Duplicate"
+dupBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+dupBtn.TextSize = 14
+dupBtn.AutoButtonColor = true
+dupBtn.Parent = main
+
+local dupCorner = Instance.new("UICorner")
+dupCorner.CornerRadius = UDim.new(0, 6)
+dupCorner.Parent = dupBtn
+
+-- Clear button
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(1, -28, 0, 32)
+clearBtn.Position = UDim2.new(0, 14, 0, 160)
+clearBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
+clearBtn.Font = Enum.Font.Gotham
+clearBtn.Text = "Clear Clones"
+clearBtn.TextColor3 = Color3.fromRGB(220, 220, 225)
+clearBtn.TextSize = 13
+clearBtn.Parent = main
+
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 6)
+clearCorner.Parent = clearBtn
+
+-- ========================= Logic =========================
+local clones = {}
+local connections = {}
 
 local function getEquippedTool()
 	local char = player.Character
@@ -45,34 +125,36 @@ end
 local function duplicate()
 	local tool = getEquippedTool()
 	if not tool then
-		warn("В руке нет предмета (Tool)")
+		status.Text = "No item equipped"
 		return
 	end
 
 	local handle = tool:FindFirstChild("Handle")
 	if not handle then
-		warn("У предмета нет Handle")
+		status.Text = "Item has no Handle"
 		return
 	end
 
-	-- Клонируем визуальную часть
 	local clone = handle:Clone()
-	-- Убираем скрипты/звуки, оставляем только визуал
+
+	-- IMPORTANT: remove anything that links the clone to your body,
+	-- otherwise moving the clone drags you into the air.
 	for _, d in ipairs(clone:GetDescendants()) do
-		if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Sound") then
+		if d:IsA("Weld") or d:IsA("WeldConstraint") or d:IsA("Motor6D")
+			or d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Sound") then
 			d:Destroy()
 		end
 	end
+
 	clone.Anchored = true
 	clone.CanCollide = false
 	clone.CanTouch = false
-	clone.Transparency = math.min(handle.Transparency + 0.2, 0.6) -- чуть прозрачнее, чтобы отличать
-	clone.Parent = workspace -- только на клиенте => виден только тебе
+	clone.Massless = true
+	clone.Transparency = math.clamp(handle.Transparency + 0.15, 0, 0.6)
+	clone.Parent = workspace -- client-only => visible only to you
 
-	-- Смещение от оригинала, чтобы клон было видно рядом
 	local offset = CFrame.new(0, 3, 0)
 
-	-- Привязываем клон к движению руки
 	local conn = RunService.RenderStepped:Connect(function()
 		if not handle or not handle.Parent then return end
 		clone.CFrame = handle.CFrame * offset
@@ -80,6 +162,7 @@ local function duplicate()
 
 	table.insert(clones, clone)
 	table.insert(connections, conn)
+	status.Text = "Duplicated! Clones: " .. #clones
 end
 
 local function clearClones()
@@ -91,7 +174,8 @@ local function clearClones()
 	end
 	clones = {}
 	connections = {}
+	status.Text = "Cleared all clones"
 end
 
-button.MouseButton1Click:Connect(duplicate)
-clearButton.MouseButton1Click:Connect(clearClones)
+dupBtn.MouseButton1Click:Connect(duplicate)
+clearBtn.MouseButton1Click:Connect(clearClones)
