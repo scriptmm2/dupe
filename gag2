@@ -1,173 +1,83 @@
---[ НАЗВАНИЕ: DupeUI v2.0 - С движением, закрытием и визуальным дюпом ]
---[ РАБОТАЕТ: ТОЛЬКО визуально, реальные предметы не дублируются ]
---[ Это клиентский рендер, не влияет на серверный инвентарь ]
+--[ NAME: DupeUI v3.0 - Visual Clone Only ]
+--[ REAL DUPLICATION IS IMPOSSIBLE IN ROBLOX 2024+ ]
+--[ THIS IS VISUAL EFFECT ONLY, NOT REAL ITEM DUPLICATION ]
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Backpack = LocalPlayer:WaitForChild("Backpack")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
--- Переменные для движения GUI
 local dragging = false
 local dragStart = nil
 local startPos = nil
 
--- Создание GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DupeGUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 320, 0, 480)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -240)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-MainFrame.BackgroundTransparency = 0.05
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.fromRGB(255, 0, 100)
-MainFrame.Active = true
+MainFrame.Size = UDim2.new(0, 360, 0, 520)
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -260)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+MainFrame.BackgroundTransparency = 0
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
--- Заголовок с кнопкой закрытия и возможностью перетаскивания
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 12)
+Corner.Parent = MainFrame
+
+local Glow = Instance.new("Frame")
+Glow.Size = UDim2.new(1, 4, 1, 4)
+Glow.Position = UDim2.new(0, -2, 0, -2)
+Glow.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
+Glow.BackgroundTransparency = 0.8
+Glow.BorderSizePixel = 0
+Glow.Parent = MainFrame
+local GlowCorner = Instance.new("UICorner")
+GlowCorner.CornerRadius = UDim.new(0, 14)
+GlowCorner.Parent = Glow
+
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 40)
-TitleBar.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
-TitleBar.BackgroundTransparency = 0.3
+TitleBar.Size = UDim2.new(1, 0, 0, 44)
+TitleBar.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
+TitleBar.BackgroundTransparency = 0
 TitleBar.Parent = MainFrame
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -40, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "DUPE SYSTEM v2"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TitleBar
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -50, 1, 0)
+TitleLabel.Position = UDim2.new(0, 16, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "DUPE SYSTEM v3"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 18
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
 
--- Кнопка закрытия
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 30, 1, 0)
-CloseButton.Position = UDim2.new(1, -30, 0, 0)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 18
-CloseButton.Parent = TitleBar
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -42, 0, 6)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.BackgroundTransparency = 0.9
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 18
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(1, 0)
+CloseCorner.Parent = CloseBtn
 
--- Список предметов (скроллинг)
-local ItemListFrame = Instance.new("ScrollingFrame")
-ItemListFrame.Size = UDim2.new(1, -20, 0, 300)
-ItemListFrame.Position = UDim2.new(0, 10, 0, 60)
-ItemListFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-ItemListFrame.BorderSizePixel = 1
-ItemListFrame.BorderColor3 = Color3.fromRGB(255, 0, 100)
-ItemListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ItemListFrame.ScrollBarThickness = 8
-ItemListFrame.Parent = MainFrame
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = ItemListFrame
-UIListLayout.Padding = UDim.new(0, 5)
-
--- Кнопка дюпа
-local DupeButton = Instance.new("TextButton")
-DupeButton.Size = UDim2.new(0.8, 0, 0, 50)
-DupeButton.Position = UDim2.new(0.1, 0, 1, -70)
-DupeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
-DupeButton.Text = "ДЮПНУТЬ ВЫБРАННЫЙ"
-DupeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-DupeButton.Font = Enum.Font.GothamBold
-DupeButton.TextSize = 16
-DupeButton.Parent = MainFrame
-
--- Статус
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(1, 0, 0, 30)
-StatusLabel.Position = UDim2.new(0, 0, 1, -30)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "Выберите предмет"
-StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.TextSize = 12
-StatusLabel.Parent = MainFrame
-
--- Переменная для выбранного предмета
-local selectedItem = nil
-local itemButtons = {}
-
--- Функция обновления списка предметов
-local function UpdateItemList()
-    -- Очистка списка
-    for _, btn in pairs(itemButtons) do
-        btn:Destroy()
-    end
-    itemButtons = {}
-    
-    -- Получение предметов из рюкзака
-    local items = Backpack:GetChildren()
-    local canvasHeight = 0
-    
-    for _, item in pairs(items) do
-        if item:IsA("Tool") then
-            local itemButton = Instance.new("TextButton")
-            itemButton.Size = UDim2.new(1, -10, 0, 45)
-            itemButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-            itemButton.BorderSizePixel = 1
-            itemButton.BorderColor3 = Color3.fromRGB(80, 80, 100)
-            itemButton.Text = item.Name .. " [" .. (item:FindFirstChild("Handle") and "Tool" or "Item") .. "]"
-            itemButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-            itemButton.Font = Enum.Font.Gotham
-            itemButton.TextSize = 14
-            itemButton.Parent = ItemListFrame
-            
-            -- Выделение при наведении
-            itemButton.MouseEnter:Connect(function()
-                if selectedItem ~= itemButton then
-                    itemButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-                end
-            end)
-            itemButton.MouseLeave:Connect(function()
-                if selectedItem ~= itemButton then
-                    itemButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-                end
-            end)
-            
-            -- Выбор предмета
-            itemButton.MouseButton1Click:Connect(function()
-                -- Сброс выделения всех кнопок
-                for _, btn in pairs(itemButtons) do
-                    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-                end
-                -- Выделение выбранной
-                itemButton.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
-                selectedItem = itemButton
-                StatusLabel.Text = "Выбран: " .. item.Name
-                StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
-            end)
-            
-            itemButtons[item.Name] = itemButton
-            canvasHeight = canvasHeight + 50
-        end
-    end
-    
-    ItemListFrame.CanvasSize = UDim2.new(0, 0, 0, canvasHeight)
-    
-    if canvasHeight == 0 then
-        local emptyLabel = Instance.new("TextLabel")
-        emptyLabel.Size = UDim2.new(1, 0, 0, 100)
-        emptyLabel.BackgroundTransparency = 1
-        emptyLabel.Text = "Нет предметов в рюкзаке"
-        emptyLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-        emptyLabel.Font = Enum.Font.Gotham
-        emptyLabel.TextSize = 14
-        emptyLabel.Parent = ItemListFrame
-        ItemListFrame.CanvasSize = UDim2.new(0, 0, 0, 100)
-    end
-end
-
--- Перетаскивание GUI
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
@@ -189,102 +99,218 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Закрытие GUI
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+local ItemsContainer = Instance.new("ScrollingFrame")
+ItemsContainer.Size = UDim2.new(1, -24, 0, 320)
+ItemsContainer.Position = UDim2.new(0, 12, 0, 60)
+ItemsContainer.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+ItemsContainer.BackgroundTransparency = 0
+ItemsContainer.BorderSizePixel = 0
+ItemsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+ItemsContainer.ScrollBarThickness = 6
+ItemsContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 100)
+ItemsContainer.Parent = MainFrame
+local ContainerCorner = Instance.new("UICorner")
+ContainerCorner.CornerRadius = UDim.new(0, 10)
+ContainerCorner.Parent = ItemsContainer
+
+local ItemLayout = Instance.new("UIListLayout")
+ItemLayout.Parent = ItemsContainer
+ItemLayout.Padding = UDim.new(0, 8)
+ItemLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local DupeBtn = Instance.new("TextButton")
+DupeBtn.Size = UDim2.new(0.85, 0, 0, 52)
+DupeBtn.Position = UDim2.new(0.075, 0, 1, -72)
+DupeBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
+DupeBtn.BackgroundTransparency = 0
+DupeBtn.Text = "DUPLICATE SELECTED"
+DupeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+DupeBtn.TextSize = 16
+DupeBtn.Font = Enum.Font.GothamBold
+DupeBtn.Parent = MainFrame
+local DupeCorner = Instance.new("UICorner")
+DupeCorner.CornerRadius = UDim.new(0, 10)
+DupeCorner.Parent = DupeBtn
+
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, -24, 0, 28)
+StatusText.Position = UDim2.new(0, 12, 1, -36)
+StatusText.BackgroundTransparency = 1
+StatusText.Text = "Select an item to duplicate"
+StatusText.TextColor3 = Color3.fromRGB(160, 160, 180)
+StatusText.TextSize = 12
+StatusText.Font = Enum.Font.Gotham
+StatusText.Parent = MainFrame
+
+local selectedItemName = nil
+local selectedButton = nil
+local itemButtons = {}
+
+local function updateInventoryDisplay()
+    for _, btn in pairs(itemButtons) do
+        btn:Destroy()
+    end
+    itemButtons = {}
+    
+    local items = {}
+    for _, item in pairs(Backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            table.insert(items, item)
+        end
+    end
+    
+    local canvasY = 0
+    
+    for _, item in pairs(items) do
+        local itemBtn = Instance.new("TextButton")
+        itemBtn.Size = UDim2.new(0.94, 0, 0, 48)
+        itemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        itemBtn.BackgroundTransparency = 0
+        itemBtn.Text = "📦 " .. item.Name
+        itemBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+        itemBtn.TextSize = 14
+        itemBtn.Font = Enum.Font.GothamSemibold
+        itemBtn.TextXAlignment = Enum.TextXAlignment.Left
+        itemBtn.Parent = ItemsContainer
+        local BtnCorner = Instance.new("UICorner")
+        BtnCorner.CornerRadius = UDim.new(0, 8)
+        BtnCorner.Parent = itemBtn
+        
+        local iconFrame = Instance.new("Frame")
+        iconFrame.Size = UDim2.new(0, 32, 1, 0)
+        iconFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 100)
+        iconFrame.BackgroundTransparency = 0.8
+        iconFrame.Parent = itemBtn
+        local IconCorner = Instance.new("UICorner")
+        IconCorner.CornerRadius = UDim.new(0, 8)
+        IconCorner.Parent = iconFrame
+        
+        itemBtn.MouseEnter:Connect(function()
+            if selectedButton ~= itemBtn then
+                itemBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+            end
+        end)
+        
+        itemBtn.MouseLeave:Connect(function()
+            if selectedButton ~= itemBtn then
+                itemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+            end
+        end)
+        
+        itemBtn.MouseButton1Click:Connect(function()
+            if selectedButton then
+                selectedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+            end
+            selectedButton = itemBtn
+            selectedItemName = item.Name
+            itemBtn.BackgroundColor3 = Color3.fromRGB(100, 30, 150)
+            StatusText.Text = "Selected: " .. selectedItemName
+            StatusText.TextColor3 = Color3.fromRGB(0, 255, 150)
+            
+            local tween = TweenService:Create(itemBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(120, 40, 170)})
+            tween:Play()
+        end)
+        
+        itemButtons[item.Name] = itemBtn
+        canvasY = canvasY + 56
+    end
+    
+    ItemsContainer.CanvasSize = UDim2.new(0, 0, 0, math.max(canvasY, 300))
+    
+    if #items == 0 then
+        local emptyLabel = Instance.new("TextLabel")
+        emptyLabel.Size = UDim2.new(1, 0, 0, 60)
+        emptyLabel.BackgroundTransparency = 1
+        emptyLabel.Text = "✨ No items in backpack ✨"
+        emptyLabel.TextColor3 = Color3.fromRGB(120, 120, 140)
+        emptyLabel.TextSize = 14
+        emptyLabel.Font = Enum.Font.Gotham
+        emptyLabel.Parent = ItemsContainer
+        ItemsContainer.CanvasSize = UDim2.new(0, 0, 0, 100)
+    end
+end
+
+DupeBtn.MouseEnter:Connect(function()
+    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(220, 30, 80)}):Play()
 end)
 
--- Анимация кнопки
-DupeButton.MouseEnter:Connect(function()
-    DupeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 80)
+DupeBtn.MouseLeave:Connect(function()
+    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 50, 100)}):Play()
 end)
 
-DupeButton.MouseLeave:Connect(function()
-    DupeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
-end)
-
--- ВИЗУАЛЬНЫЙ ДЮП (НЕ РЕАЛЬНЫЙ)
-DupeButton.MouseButton1Click:Connect(function()
-    if not selectedItem then
-        StatusLabel.Text = "Сначала выберите предмет!"
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+DupeBtn.MouseButton1Click:Connect(function()
+    if not selectedItemName then
+        StatusText.Text = "❌ No item selected!"
+        StatusText.TextColor3 = Color3.fromRGB(255, 80, 80)
+        TweenService:Create(StatusText, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(255, 80, 80)}):Play()
         wait(1.5)
-        StatusLabel.Text = "Выберите предмет"
-        StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+        StatusText.Text = "Select an item to duplicate"
+        StatusText.TextColor3 = Color3.fromRGB(160, 160, 180)
         return
     end
     
-    -- Находим реальный предмет по имени
     local realItem = nil
     for _, item in pairs(Backpack:GetChildren()) do
-        if item:IsA("Tool") and item.Name == selectedItem.Text:match("(.*) %[") then
+        if item:IsA("Tool") and item.Name == selectedItemName then
             realItem = item
             break
         end
     end
     
     if not realItem then
-        StatusLabel.Text = "Предмет не найден!"
+        StatusText.Text = "❌ Item not found!"
         return
     end
     
-    StatusLabel.Text = "Дюпаю: " .. realItem.Name .. "..."
-    StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+    StatusText.Text = "🔮 Duplicating " .. selectedItemName .. "..."
+    StatusText.TextColor3 = Color3.fromRGB(255, 200, 50)
     
-    -- Визуальный эффект
-    DupeButton.BackgroundColor3 = Color3.fromRGB(100, 0, 200)
+    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(150, 0, 200)}):Play()
+    
     wait(0.3)
     
-    -- ВИЗУАЛЬНОЕ ДОБАВЛЕНИЕ КОПИИ (ТОЛЬКО ГРАФИКА)
-    -- Создаем визуальный элемент поверх рюкзака (не настоящий предмет)
-    local fakeItemFrame = Instance.new("Frame")
-    fakeItemFrame.Size = UDim2.new(0, 280, 0, 40)
-    fakeItemFrame.Position = UDim2.new(0.5, -140, 0.2, 0)
-    fakeItemFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
-    fakeItemFrame.BackgroundTransparency = 0.3
-    fakeItemFrame.BorderSizePixel = 2
-    fakeItemFrame.BorderColor3 = Color3.fromRGB(0, 255, 0)
-    fakeItemFrame.Parent = MainFrame
+    local fakeClone = Instance.new("Frame")
+    fakeClone.Size = UDim2.new(0.9, 0, 0, 44)
+    fakeClone.Position = UDim2.new(0.05, 0, 0.2, 0)
+    fakeClone.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+    fakeClone.BackgroundTransparency = 0.2
+    fakeClone.BorderSizePixel = 0
+    fakeClone.Parent = MainFrame
+    local CloneCorner = Instance.new("UICorner")
+    CloneCorner.CornerRadius = UDim.new(0, 8)
+    CloneCorner.Parent = fakeClone
     
-    local fakeText = Instance.new("TextLabel")
-    fakeText.Size = UDim2.new(1, 0, 1, 0)
-    fakeText.BackgroundTransparency = 1
-    fakeText.Text = "+ " .. realItem.Name .. " (ВИЗУАЛЬНАЯ КОПИЯ)"
-    fakeText.TextColor3 = Color3.fromRGB(0, 255, 100)
-    fakeText.Font = Enum.Font.GothamBold
-    fakeText.TextSize = 12
-    fakeText.Parent = fakeItemFrame
+    local cloneText = Instance.new("TextLabel")
+    cloneText.Size = UDim2.new(1, 0, 1, 0)
+    cloneText.BackgroundTransparency = 1
+    cloneText.Text = "+ " .. selectedItemName .. " [VISUAL COPY]"
+    cloneText.TextColor3 = Color3.fromRGB(0, 255, 150)
+    cloneText.TextSize = 13
+    cloneText.Font = Enum.Font.GothamBold
+    cloneText.Parent = fakeClone
     
-    -- Анимация исчезновения
-    for i = 1, 20 do
-        wait(0.05)
-        fakeItemFrame.Position = UDim2.new(0.5, -140, 0.2, i * 3)
-        fakeItemFrame.BackgroundTransparency = 0.3 + (i / 20) * 0.7
-        fakeText.TextTransparency = (i / 20)
+    for i = 1, 25 do
+        wait(0.03)
+        fakeClone.Position = UDim2.new(0.05, 0, 0.2, i * 3)
+        fakeClone.BackgroundTransparency = 0.2 + (i / 25) * 0.8
+        cloneText.TextTransparency = (i / 25)
     end
     
-    fakeItemFrame:Destroy()
+    fakeClone:Destroy()
     
-    StatusLabel.Text = "Дюп выполнен! +1 " .. realItem.Name .. " (визуально)"
-    StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    DupeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
+    StatusText.Text = "✅ Visual duplicate added! +1 " .. selectedItemName
+    StatusText.TextColor3 = Color3.fromRGB(0, 255, 100)
+    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 100)}):Play()
     
     wait(2)
-    StatusLabel.Text = "Выберите предмет"
-    StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    StatusText.Text = "Select an item to duplicate"
+    StatusText.TextColor3 = Color3.fromRGB(160, 160, 180)
 end)
 
--- Обновление списка при изменении рюкзака
-Backpack.ChildAdded:Connect(UpdateItemList)
-Backpack.ChildRemoved:Connect(UpdateItemList)
+Backpack.ChildAdded:Connect(updateInventoryDisplay)
+Backpack.ChildRemoved:Connect(updateInventoryDisplay)
 
--- Первоначальное заполнение списка
-UpdateItemList()
+updateInventoryDisplay()
 
--- Визуальный эффект появления GUI
-MainFrame.BackgroundTransparency = 1
-for i = 1, 10 do
-    wait(0.02)
-    MainFrame.BackgroundTransparency = 0.05 * (1 - (i-1)/10)
-end
-MainFrame.BackgroundTransparency = 0.05
+local appearTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {BackgroundTransparency = 0})
+appearTween:Play()
