@@ -1,4 +1,5 @@
---[ DUPE UI v4.0 - VISUAL ONLY | NO REAL DUPE | ITEMS FROM BOTH BACKPACK & CHARACTER ]
+--[ VISUAL FAKE INVENTORY v5.0 - ITEMS APPEAR IN GUI BACKPACK LIST ]
+--[ DOES NOT ADD REAL ITEMS TO SERVER. VISUAL ONLY. ]
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -11,14 +12,16 @@ local dragging = false
 local dragStart = nil
 local startPos = nil
 
+local fakeItems = {} -- store fake item names for this session
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DupeGUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 380, 0, 540)
-MainFrame.Position = UDim2.new(0.5, -190, 0.5, -270)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+MainFrame.Size = UDim2.new(0, 400, 0, 560)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -280)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
 MainFrame.BackgroundTransparency = 0
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
@@ -28,20 +31,9 @@ local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 14)
 Corner.Parent = MainFrame
 
-local Glow = Instance.new("Frame")
-Glow.Size = UDim2.new(1, 6, 1, 6)
-Glow.Position = UDim2.new(0, -3, 0, -3)
-Glow.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
-Glow.BackgroundTransparency = 0.85
-Glow.BorderSizePixel = 0
-Glow.Parent = MainFrame
-local GlowCorner = Instance.new("UICorner")
-GlowCorner.CornerRadius = UDim.new(0, 16)
-GlowCorner.Parent = Glow
-
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 46)
-TitleBar.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
+TitleBar.BackgroundColor3 = Color3.fromRGB(255, 40, 120)
 TitleBar.BackgroundTransparency = 0
 TitleBar.Parent = MainFrame
 local TitleCorner = Instance.new("UICorner")
@@ -52,7 +44,7 @@ local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.new(1, -60, 1, 0)
 TitleLabel.Position = UDim2.new(0, 18, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "DUPE SYSTEM v4"
+TitleLabel.Text = "FAKE INVENTORY v5"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 18
@@ -99,14 +91,14 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 local ItemsContainer = Instance.new("ScrollingFrame")
-ItemsContainer.Size = UDim2.new(1, -24, 0, 330)
+ItemsContainer.Size = UDim2.new(1, -24, 0, 340)
 ItemsContainer.Position = UDim2.new(0, 12, 0, 62)
-ItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+ItemsContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
 ItemsContainer.BackgroundTransparency = 0
 ItemsContainer.BorderSizePixel = 0
 ItemsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 ItemsContainer.ScrollBarThickness = 6
-ItemsContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 30, 110)
+ItemsContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 40, 120)
 ItemsContainer.Parent = MainFrame
 local ContainerCorner = Instance.new("UICorner")
 ContainerCorner.CornerRadius = UDim.new(0, 10)
@@ -120,11 +112,11 @@ ItemLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 local DupeBtn = Instance.new("TextButton")
 DupeBtn.Size = UDim2.new(0.85, 0, 0, 54)
 DupeBtn.Position = UDim2.new(0.075, 0, 1, -74)
-DupeBtn.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
+DupeBtn.BackgroundColor3 = Color3.fromRGB(255, 40, 120)
 DupeBtn.BackgroundTransparency = 0
-DupeBtn.Text = "DUPLICATE SELECTED"
+DupeBtn.Text = "FAKE DUPE TO BACKPACK"
 DupeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-DupeBtn.TextSize = 16
+DupeBtn.TextSize = 15
 DupeBtn.Font = Enum.Font.GothamBold
 DupeBtn.Parent = MainFrame
 local DupeCorner = Instance.new("UICorner")
@@ -135,50 +127,58 @@ local StatusText = Instance.new("TextLabel")
 StatusText.Size = UDim2.new(1, -24, 0, 30)
 StatusText.Position = UDim2.new(0, 12, 1, -38)
 StatusText.BackgroundTransparency = 1
-StatusText.Text = "Select an item"
+StatusText.Text = "Select a REAL item"
 StatusText.TextColor3 = Color3.fromRGB(170, 170, 190)
 StatusText.TextSize = 12
 StatusText.Font = Enum.Font.Gotham
 StatusText.Parent = MainFrame
 
-local selectedItemName = nil
+local selectedRealItemName = nil
 local selectedButton = nil
 local itemButtons = {}
 
-local function getAllItems()
+local function getAllDisplayItems()
     local items = {}
+    -- Real items from Backpack
     for _, item in pairs(Backpack:GetChildren()) do
         if item:IsA("Tool") then
-            table.insert(items, {name = item.Name, source = "Backpack"})
+            table.insert(items, {name = item.Name, type = "REAL", source = "Backpack"})
         end
     end
+    -- Real items in hand (Character)
     if Character then
         for _, item in pairs(Character:GetChildren()) do
             if item:IsA("Tool") then
-                table.insert(items, {name = item.Name, source = "Hand"})
+                table.insert(items, {name = item.Name, type = "REAL", source = "Hand"})
             end
         end
+    end
+    -- FAKE items (visual only, stored locally)
+    for _, fakeName in pairs(fakeItems) do
+        table.insert(items, {name = fakeName, type = "FAKE", source = "Backpack (FAKE)"})
     end
     return items
 end
 
-local function updateInventoryDisplay()
+local function updateDisplay()
     for _, btn in pairs(itemButtons) do
         btn:Destroy()
     end
     itemButtons = {}
     
-    local items = getAllItems()
+    local items = getAllDisplayItems()
     local canvasY = 0
     
     for _, info in pairs(items) do
         local itemBtn = Instance.new("TextButton")
         itemBtn.Size = UDim2.new(0.94, 0, 0, 48)
-        itemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        local bgColor = (info.type == "FAKE") and Color3.fromRGB(60, 30, 70) or Color3.fromRGB(35, 35, 45)
+        itemBtn.BackgroundColor3 = bgColor
         itemBtn.BackgroundTransparency = 0
-        local sourceIcon = (info.source == "Hand") and "✋ " or "🎒 "
-        itemBtn.Text = sourceIcon .. info.name
-        itemBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+        local icon = (info.type == "FAKE") and "🟣 " or (info.source == "Hand" and "✋ " or "🎒 ")
+        itemBtn.Text = icon .. info.name .. (info.type == "FAKE" and " [COPY]" or "")
+        local textColor = (info.type == "FAKE") and Color3.fromRGB(200, 150, 255) or Color3.fromRGB(220, 220, 240)
+        itemBtn.TextColor3 = textColor
         itemBtn.TextSize = 14
         itemBtn.Font = Enum.Font.GothamSemibold
         itemBtn.TextXAlignment = Enum.TextXAlignment.Left
@@ -189,39 +189,49 @@ local function updateInventoryDisplay()
         
         local iconFrame = Instance.new("Frame")
         iconFrame.Size = UDim2.new(0, 34, 1, 0)
-        iconFrame.BackgroundColor3 = Color3.fromRGB(255, 30, 110)
+        iconFrame.BackgroundColor3 = (info.type == "FAKE") and Color3.fromRGB(150, 50, 200) or Color3.fromRGB(255, 40, 120)
         iconFrame.BackgroundTransparency = 0.7
         iconFrame.Parent = itemBtn
         local IconCorner = Instance.new("UICorner")
         IconCorner.CornerRadius = UDim.new(0, 8)
         IconCorner.Parent = iconFrame
         
-        itemBtn.MouseEnter:Connect(function()
-            if selectedButton ~= itemBtn then
-                itemBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-            end
-        end)
+        -- Only allow selecting REAL items for duplication
+        if info.type == "REAL" then
+            itemBtn.MouseEnter:Connect(function()
+                if selectedButton ~= itemBtn then
+                    itemBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+                end
+            end)
+            itemBtn.MouseLeave:Connect(function()
+                if selectedButton ~= itemBtn then
+                    itemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+                end
+            end)
+            itemBtn.MouseButton1Click:Connect(function()
+                if selectedButton then
+                    selectedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+                end
+                selectedButton = itemBtn
+                selectedRealItemName = info.name
+                itemBtn.BackgroundColor3 = Color3.fromRGB(130, 40, 180)
+                StatusText.Text = "Selected: " .. selectedRealItemName .. " [" .. info.source .. "]"
+                StatusText.TextColor3 = Color3.fromRGB(0, 255, 150)
+                TweenService:Create(itemBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(140, 50, 190)}):Play()
+            end)
+        else
+            -- Fake items are not selectable
+            itemBtn.TextColor3 = Color3.fromRGB(180, 130, 220)
+            local hoverColor = Color3.fromRGB(70, 40, 85)
+            itemBtn.MouseEnter:Connect(function()
+                itemBtn.BackgroundColor3 = hoverColor
+            end)
+            itemBtn.MouseLeave:Connect(function()
+                itemBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 70)
+            end)
+        end
         
-        itemBtn.MouseLeave:Connect(function()
-            if selectedButton ~= itemBtn then
-                itemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-            end
-        end)
-        
-        itemBtn.MouseButton1Click:Connect(function()
-            if selectedButton then
-                selectedButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-            end
-            selectedButton = itemBtn
-            selectedItemName = info.name
-            itemBtn.BackgroundColor3 = Color3.fromRGB(130, 40, 180)
-            StatusText.Text = "Selected: " .. selectedItemName .. " [" .. info.source .. "]"
-            StatusText.TextColor3 = Color3.fromRGB(0, 255, 150)
-            
-            TweenService:Create(itemBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(140, 50, 190)}):Play()
-        end)
-        
-        itemButtons[info.name .. info.source] = itemBtn
+        itemButtons[info.name .. info.type] = itemBtn
         canvasY = canvasY + 56
     end
     
@@ -231,7 +241,7 @@ local function updateInventoryDisplay()
         local emptyLabel = Instance.new("TextLabel")
         emptyLabel.Size = UDim2.new(1, 0, 0, 60)
         emptyLabel.BackgroundTransparency = 1
-        emptyLabel.Text = "🕳️ No items (backpack or hands)"
+        emptyLabel.Text = "🕳️ No items. Get some real items first."
         emptyLabel.TextColor3 = Color3.fromRGB(120, 120, 140)
         emptyLabel.TextSize = 14
         emptyLabel.Font = Enum.Font.Gotham
@@ -241,81 +251,80 @@ local function updateInventoryDisplay()
 end
 
 DupeBtn.MouseEnter:Connect(function()
-    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(220, 20, 90)}):Play()
+    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(220, 25, 100)}):Play()
 end)
 
 DupeBtn.MouseLeave:Connect(function()
-    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 30, 110)}):Play()
+    TweenService:Create(DupeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 40, 120)}):Play()
 end)
 
 DupeBtn.MouseButton1Click:Connect(function()
-    if not selectedItemName then
-        StatusText.Text = "❌ No item selected!"
+    if not selectedRealItemName then
+        StatusText.Text = "❌ Select a REAL item first (not fake)"
         StatusText.TextColor3 = Color3.fromRGB(255, 70, 70)
         wait(1.5)
-        StatusText.Text = "Select an item"
+        StatusText.Text = "Select a REAL item"
         StatusText.TextColor3 = Color3.fromRGB(170, 170, 190)
         return
     end
     
-    StatusText.Text = "🌀 Duplicating " .. selectedItemName .. " (visual)..."
+    StatusText.Text = "🔮 Creating FAKE copy of " .. selectedRealItemName .. " in backpack..."
     StatusText.TextColor3 = Color3.fromRGB(255, 200, 50)
     
     TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(180, 0, 200)}):Play()
     
-    wait(0.4)
+    wait(0.3)
     
-    local fakeClone = Instance.new("Frame")
-    fakeClone.Size = UDim2.new(0.85, 0, 0, 44)
-    fakeClone.Position = UDim2.new(0.075, 0, 0.25, 0)
-    fakeClone.BackgroundColor3 = Color3.fromRGB(0, 210, 110)
-    fakeClone.BackgroundTransparency = 0.15
-    fakeClone.BorderSizePixel = 0
-    fakeClone.Parent = MainFrame
-    local CloneCorner = Instance.new("UICorner")
-    CloneCorner.CornerRadius = UDim.new(0, 8)
-    CloneCorner.Parent = fakeClone
+    -- Add fake item to local list
+    local fakeName = selectedRealItemName .. "_copy_" .. tostring(#fakeItems + 1)
+    table.insert(fakeItems, selectedRealItemName)
     
-    local cloneText = Instance.new("TextLabel")
-    cloneText.Size = UDim2.new(1, 0, 1, 0)
-    cloneText.BackgroundTransparency = 1
-    cloneText.Text = "✨ +1 " .. selectedItemName .. " [VISUAL ONLY]"
-    cloneText.TextColor3 = Color3.fromRGB(0, 255, 150)
-    cloneText.TextSize = 13
-    cloneText.Font = Enum.Font.GothamBold
-    cloneText.Parent = fakeClone
+    -- Visual flash effect
+    local flash = Instance.new("Frame")
+    flash.Size = UDim2.new(1, 0, 1, 0)
+    flash.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+    flash.BackgroundTransparency = 0.5
+    flash.Parent = MainFrame
+    TweenService:Create(flash, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+    game:GetService("Debris"):AddItem(flash, 0.3)
     
-    for i = 1, 30 do
-        wait(0.025)
-        fakeClone.Position = UDim2.new(0.075, 0, 0.25, i * 2.5)
-        fakeClone.BackgroundTransparency = 0.15 + (i / 30) * 0.85
-        cloneText.TextTransparency = (i / 30)
+    updateDisplay()
+    
+    -- Find the newly added fake button and animate it
+    wait(0.05)
+    for _, btn in pairs(itemButtons) do
+        if btn.Text:find(selectedRealItemName) and btn.Text:find("COPY") then
+            local origColor = btn.BackgroundColor3
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 200, 100)}):Play()
+            wait(0.2)
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = origColor}):Play()
+            break
+        end
     end
     
-    fakeClone:Destroy()
-    
-    StatusText.Text = "⚠️ VISUAL duplicate done! NOT REAL item."
-    StatusText.TextColor3 = Color3.fromRGB(255, 255, 100)
-    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 30, 110)}):Play()
+    StatusText.Text = "✅ FAKE item added to BACKPACK (visual only!)"
+    StatusText.TextColor3 = Color3.fromRGB(0, 255, 100)
+    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 40, 120)}):Play()
     
     wait(2.5)
-    StatusText.Text = "Select an item"
+    StatusText.Text = "Select a REAL item"
     StatusText.TextColor3 = Color3.fromRGB(170, 170, 190)
 end)
 
+-- Update when real items change
 LocalPlayer.CharacterAdded:Connect(function(newChar)
     Character = newChar
-    updateInventoryDisplay()
+    updateDisplay()
 end)
 
-Backpack.ChildAdded:Connect(updateInventoryDisplay)
-Backpack.ChildRemoved:Connect(updateInventoryDisplay)
+Backpack.ChildAdded:Connect(updateDisplay)
+Backpack.ChildRemoved:Connect(updateDisplay)
 if Character then
-    Character.ChildAdded:Connect(updateInventoryDisplay)
-    Character.ChildRemoved:Connect(updateInventoryDisplay)
+    Character.ChildAdded:Connect(updateDisplay)
+    Character.ChildRemoved:Connect(updateDisplay)
 end
 
-updateInventoryDisplay()
+updateDisplay()
 
 local appearTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {BackgroundTransparency = 0})
 appearTween:Play()
